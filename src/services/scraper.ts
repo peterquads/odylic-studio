@@ -536,6 +536,63 @@ async function fetchShopifyProductJson(url: string): Promise<{ images: string[];
     }
   } catch { /* CORS blocked */ }
 
+  // Fallback for Shopify Hydrogen/headless: scrape product page HTML for images
+  // Hydrogen sites don't support .json but still have Shopify CDN images in their HTML/scripts
+  try {
+    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
+    const resp = await fetch(proxyUrl)
+    if (resp.ok) {
+      const html = await resp.text()
+      const cdnImages = new Set<string>()
+
+      // Extract Shopify CDN image URLs from anywhere in the HTML (scripts, data attributes, etc.)
+      const cdnRegex = /https?:\/\/cdn\.shopify\.com\/s\/files\/[^"'\s<>)]+\.(?:jpg|jpeg|png|webp)/gi
+      const allCdnImages: string[] = []
+      let m
+      while ((m = cdnRegex.exec(html)) !== null) {
+        const imgUrl = m[0].replace(/&amp;/g, '&')
+        // Skip tiny icons, nav images, badges
+        if (/icon|badge|payment|social|sprite|logo|favicon/i.test(imgUrl)) continue
+        if (!cdnImages.has(imgUrl)) {
+          cdnImages.add(imgUrl)
+          allCdnImages.push(imgUrl)
+        }
+      }
+
+      // Also extract from OG/meta tags
+      const ogImg = html.match(/property="og:image"[^>]*content="([^"]+)"/i)?.[1] ||
+                     html.match(/content="([^"]+)"[^>]*property="og:image"/i)?.[1]
+      if (ogImg && ogImg.includes('cdn.shopify.com') && !cdnImages.has(ogImg)) {
+        cdnImages.add(ogImg)
+        allCdnImages.unshift(ogImg) // OG image first
+      }
+
+      if (allCdnImages.length > 0) {
+        // Try to filter to product-specific images using URL slug
+        const slug = url.split('/products/')[1]?.split(/[?#]/)[0]?.toLowerCase() || ''
+        const slugParts = slug.split('-').filter(p => p.length > 2) // e.g. "drop-cut-lux" → ["drop", "cut", "lux"]
+        let productImages = allCdnImages
+        if (slugParts.length > 0) {
+          const relevant = allCdnImages.filter(u => {
+            const lower = u.toLowerCase()
+            return slugParts.some(part => lower.includes(part))
+          })
+          if (relevant.length >= 3) {
+            productImages = relevant
+          }
+        }
+
+        console.log(`Shopify Hydrogen fallback: ${allCdnImages.length} CDN images, ${productImages.length} product-relevant`)
+        const images = productImages.slice(0, 20).map(src => {
+          if (!src.includes('width=')) return src + (src.includes('?') ? '&' : '?') + 'width=1200'
+          return src
+        })
+        const titleMatch = html.match(/<title[^>]*>([^<]+)/i)
+        return { images, title: titleMatch?.[1]?.trim() || '' }
+      }
+    }
+  } catch { /* Hydrogen fallback failed */ }
+
   return null
 }
 
