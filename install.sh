@@ -41,10 +41,22 @@ fi
 echo "  ✓ Git found"
 
 # 3. Clone repo (source code only, ~50 MB)
-if [ -d "$INSTALL_DIR" ]; then
+if [ -d "$INSTALL_DIR/.git" ]; then
   echo "  ✓ $INSTALL_DIR already exists — updating..."
   cd "$INSTALL_DIR"
   git pull --ff-only 2>/dev/null || true
+elif [ -d "$INSTALL_DIR" ]; then
+  # Directory exists but isn't a git repo (partial install) — save templates, re-clone
+  echo "  Partial install detected — re-downloading source code..."
+  if [ -d "$INSTALL_DIR/templates" ]; then
+    mv "$INSTALL_DIR/templates" "${TMPDIR:-/tmp}/odylic-templates-backup"
+  fi
+  rm -rf "$INSTALL_DIR"
+  git clone --depth 1 "https://github.com/$REPO.git" "$INSTALL_DIR"
+  if [ -d "${TMPDIR:-/tmp}/odylic-templates-backup" ]; then
+    mv "${TMPDIR:-/tmp}/odylic-templates-backup" "$INSTALL_DIR/templates"
+  fi
+  cd "$INSTALL_DIR"
 else
   echo "  Downloading source code..."
   git clone --depth 1 "https://github.com/$REPO.git" "$INSTALL_DIR"
@@ -52,22 +64,26 @@ else
 fi
 
 # 4. Download templates if not already present
-if [ ! -d "$INSTALL_DIR/templates" ] || [ "$(ls -1 "$INSTALL_DIR/templates" 2>/dev/null | wc -l)" -lt 100 ]; then
+TEMPLATE_COUNT=$(ls -1 "$INSTALL_DIR/templates" 2>/dev/null | wc -l | tr -d ' ')
+if [ "$TEMPLATE_COUNT" -lt 100 ]; then
   echo "  Downloading ad templates (~650 MB)... this may take a few minutes."
   RELEASE_URL=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"browser_download_url".*templates.*zip' | head -1 | cut -d '"' -f 4)
   if [ -z "$RELEASE_URL" ]; then
     echo "  ⚠ Could not find template download. The app will still work with custom templates only."
   else
     TMP_ZIP="${TMPDIR:-/tmp}/odylic-templates.zip"
-    curl -fSL -o "$TMP_ZIP" "$RELEASE_URL"
-    echo "  Extracting templates..."
-    mkdir -p "$INSTALL_DIR/templates"
-    unzip -qo "$TMP_ZIP" -d "$INSTALL_DIR/templates"
-    rm -f "$TMP_ZIP"
-    echo "  ✓ $(ls -1 "$INSTALL_DIR/templates" | wc -l | tr -d ' ') templates installed"
+    if curl -fSL -o "$TMP_ZIP" "$RELEASE_URL"; then
+      echo "  Extracting templates..."
+      mkdir -p "$INSTALL_DIR/templates"
+      unzip -qo "$TMP_ZIP" -d "$INSTALL_DIR/templates"
+      rm -f "$TMP_ZIP"
+      echo "  ✓ $(ls -1 "$INSTALL_DIR/templates" | wc -l | tr -d ' ') templates installed"
+    else
+      echo "  ⚠ Template download failed. The app will still work with custom templates only."
+    fi
   fi
 else
-  echo "  ✓ Templates already installed ($(ls -1 "$INSTALL_DIR/templates" | wc -l | tr -d ' ') files)"
+  echo "  ✓ Templates already installed ($TEMPLATE_COUNT files)"
 fi
 
 # 5. Install npm dependencies
