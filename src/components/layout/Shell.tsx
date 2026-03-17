@@ -158,7 +158,7 @@ function SavedAdsModal({ onClose }: { onClose: () => void }) {
             <div className="grid grid-cols-3 gap-4">
               {savedAds.map(ad => (
                 <div key={ad.id} className="relative group rounded-xl overflow-hidden border border-black/[0.06]">
-                  <img src={ad.imageUrl} alt={ad.adName || 'Ad'} className="w-full aspect-square object-cover" />
+                  <img src={ad.imageUrl} alt={ad.adName || 'Ad'} loading="lazy" className="w-full aspect-square object-cover" />
                   <button
                     onClick={() => toggleSavedAd(ad.id)}
                     className="absolute top-2 right-2 p-1.5 rounded-full bg-black/40 text-red-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"

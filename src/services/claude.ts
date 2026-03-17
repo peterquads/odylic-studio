@@ -82,20 +82,34 @@ async function callModel(
   const maxRetries = 5
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        messages,
-      }),
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 60000)
+    let response: Response
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          messages,
+        }),
+      })
+    } catch (e: any) {
+      clearTimeout(timeout)
+      if (e.name === 'AbortError' && attempt < maxRetries - 1) {
+        console.log(`Request timeout (${model}), retrying...`)
+        continue
+      }
+      throw e
+    }
+    clearTimeout(timeout)
 
     if (response.ok) {
       const data = await response.json()
@@ -107,6 +121,11 @@ async function callModel(
     // Model not found - don't retry, throw immediately so caller can try next model
     if (response.status === 404) {
       throw new Error(`model_not_found:${model}`)
+    }
+
+    // Auth errors - don't retry, fail immediately
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`Claude API auth error (${response.status}): ${errText}`)
     }
 
     if ((response.status === 429 || response.status === 529) && attempt < maxRetries - 1) {

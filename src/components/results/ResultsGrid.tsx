@@ -46,10 +46,17 @@ export function ResultsGridPage() {
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingHoverRef = useRef<{ url: string; x: number; y: number } | null>(null)
 
-  const latestResults = useMemo(() => selectLatestVersions(results), [results])
-  const validResults = useMemo(() => latestResults.filter((r) => r.imageUrl), [latestResults])
-  const passedCount = useMemo(() => latestResults.filter((r) => r.qaStatus === 'passed').length, [latestResults])
-  const failedCount = useMemo(() => latestResults.filter((r) => r.qaStatus === 'failed').length, [latestResults])
+  const { latestResults, validResults, passedCount, failedCount } = useMemo(() => {
+    const latest = selectLatestVersions(results)
+    const valid: typeof latest = []
+    let passed = 0, failed = 0
+    for (const r of latest) {
+      if (r.imageUrl) valid.push(r)
+      if (r.qaStatus === 'passed') passed++
+      else if (r.qaStatus === 'failed') failed++
+    }
+    return { latestResults: latest, validResults: valid, passedCount: passed, failedCount: failed }
+  }, [results])
   const detail = useMemo(() => results.find((r) => r.id === selectedResult), [results, selectedResult])
   const editingAd = useMemo(() => results.find((r) => r.id === editingResult), [results, editingResult])
   const hasSelection = selectedIds.size > 0
@@ -250,7 +257,7 @@ export function ResultsGridPage() {
                 onMouseLeave={handleMouseLeave}
               >
                 {result.imageUrl ? (
-                  <img src={result.imageUrl} alt="Generated ad" className="w-full h-full object-cover" />
+                  <img src={result.imageUrl} alt="Generated ad" loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-error text-xs">Failed</div>
                 )}
@@ -455,7 +462,7 @@ export function ResultsGridPage() {
                             onClick={() => setSelectedResult(sib.id)}
                             className="relative w-16 h-16 rounded-lg overflow-hidden border border-black/[0.08] hover:border-black/20 transition-all"
                           >
-                            <img src={sib.imageUrl} alt={sib.aspectRatio} className="w-full h-full object-cover" />
+                            <img src={sib.imageUrl} alt={sib.aspectRatio} loading="lazy" className="w-full h-full object-cover" />
                             <span className="absolute bottom-0.5 right-0.5 text-[8px] bg-black/60 text-white px-1 rounded">
                               {sib.aspectRatio}
                             </span>

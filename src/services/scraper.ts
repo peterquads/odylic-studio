@@ -1836,9 +1836,13 @@ export async function searchLogosWithBrandName(
 
 async function fetchPageContent(url: string): Promise<string> {
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 12000)
     const response = await fetch(JINA_READER_URL + url, {
       headers: { Accept: 'application/json', 'X-Return-Format': 'markdown' },
+      signal: controller.signal,
     })
+    clearTimeout(timeout)
     if (response.ok) {
       const data = await response.json()
       return (data.data?.content || data.data?.text || '').substring(0, 5000)
@@ -1849,9 +1853,13 @@ async function fetchPageContent(url: string): Promise<string> {
 
 async function jinaSearch(query: string, limit = 5): Promise<string> {
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10000)
     const response = await fetch(JINA_SEARCH_URL + encodeURIComponent(query), {
       headers: { Accept: 'application/json' },
+      signal: controller.signal,
     })
+    clearTimeout(timeout)
     if (!response.ok) return ''
     const data = await response.json()
     const results = data.data || []
@@ -1872,11 +1880,13 @@ async function fetchAboutPage(baseUrl: string): Promise<string> {
     `${origin}/about`, `${origin}/about-us`, `${origin}/our-story`,
     `${origin}/pages/our-mission`, `${origin}/pages/who-we-are`,
   ]
-  for (const candidate of candidates) {
-    const content = await fetchPageContent(candidate)
-    if (content.length > 200) {
-      console.log(`Found About page: ${candidate}`)
-      return content
+  // Fetch all candidates in parallel, return first valid result
+  const results = await Promise.allSettled(candidates.map(c => fetchPageContent(c)))
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i]
+    if (r.status === 'fulfilled' && r.value.length > 200) {
+      console.log(`Found About page: ${candidates[i]}`)
+      return r.value
     }
   }
   return ''
