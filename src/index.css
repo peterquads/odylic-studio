@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+@theme {
+  --color-glass-border: rgba(255, 255, 255, 0.18);
+  --color-surface: #f2f0ed;
+  --color-surface-raised: #ffffff;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #555555;
+  --color-text-muted: #999999;
+  --color-accent: #1a1a1a;
+  --color-accent-hover: #333333;
+  --color-success: #2d8a4e;
+  --color-warning: #c47a15;
+  --color-error: #c43a31;
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ===== Tahoe Glassmorphism with Chromatic Aberration ===== */
+
+.glass {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  position: relative;
+  isolation: isolate;
+}
+
+/* Chromatic aberration border - RGB fringe */
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 80, 80, 0.12),
+    rgba(80, 255, 120, 0.08),
+    rgba(80, 120, 255, 0.12),
+    rgba(255, 80, 255, 0.08),
+    rgba(255, 80, 80, 0.12)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  padding: 1.5px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Subtle inner glow for lensing effect */
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 30% 20%,
+    rgba(255, 255, 255, 0.25) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+/* Serif heading utility */
+.font-display {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+}
+
+/* Background mesh for glass blur to work against */
+#root {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(200, 180, 160, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(160, 180, 210, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(180, 200, 170, 0.10) 0%, transparent 50%);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
