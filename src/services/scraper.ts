@@ -82,7 +82,7 @@ function extractFontsFromHtml(html: string): string[] {
     if (norm) familySet.add(norm)
   }
 
-  // Build result: heading font first (prefixed), body font second (prefixed), then rest
+  // Build result: heading font first, body font second, then rest — cap at 4
   const result: string[] = []
   if (headingFont) {
     result.push(`${headingFont} [heading]`)
@@ -92,11 +92,22 @@ function extractFontsFromHtml(html: string): string[] {
     result.push(`${bodyFont} [body]`)
     familySet.delete(bodyFont)
   }
+  // Tag remaining fonts by weight hints if no heading/body detected yet
   for (const fam of familySet) {
-    if (!result.includes(fam)) result.push(fam)
+    if (result.length >= 4) break
+    const lower = fam.toLowerCase()
+    if (!headingFont && (lower.includes('display') || lower.includes('heading') || lower.includes('title') || lower.includes('serif'))) {
+      result.push(`${fam} [heading]`)
+      headingFont = fam
+    } else if (!bodyFont && (lower.includes('sans') || lower.includes('body') || lower.includes('text'))) {
+      result.push(`${fam} [body]`)
+      bodyFont = fam
+    } else {
+      result.push(fam)
+    }
   }
 
-  return result
+  return result.slice(0, 4)
 }
 
 // Neutral colors to ignore — utility/layout colors, not brand colors
@@ -444,41 +455,61 @@ export async function webImageSearch(query: string, count = 10): Promise<string[
   return urls
 }
 
-// Fetch raw HTML — try proxy first, fall back to direct then Jina
-async function fetchRawHtml(url: string): Promise<string> {
-  // Attempt 1: Local proxy (server-side fetch — no CORS restrictions)
-  try {
-    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
-    const response = await fetch(proxyUrl)
-    if (response.ok) {
-      const text = await response.text()
-      if (text.length > 500) return text
-    }
-  } catch { /* proxy unavailable */ }
+// Check if HTML looks like a bot-block / access-denied page
+function isBlockedResponse(html: string): boolean {
+  const lower = html.toLowerCase()
+  return (
+    (lower.includes('access denied') || lower.includes('403 forbidden') || lower.includes('unable to give you access') ||
+     lower.includes('security issue was automatically identified') || lower.includes('please verify you are a human') ||
+     lower.includes('captcha') || lower.includes('cf-browser-verification') || lower.includes('challenge-platform')) &&
+    html.length < 10000 // Real pages are much larger
+  )
+}
 
-  // Attempt 2: direct fetch (works when CORS allows it)
-  try {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
-      redirect: 'follow',
-    })
-    if (response.ok) {
-      const text = await response.text()
-      if (text.length > 500) return text
+// Fetch raw HTML — try proxy first, fall back to direct then Jina, with retry on 403
+async function fetchRawHtml(url: string, retries = 2): Promise<string> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) {
+      console.log(`fetchRawHtml retry ${attempt}/${retries} for ${url}...`)
+      await new Promise(r => setTimeout(r, 2000 * attempt))
     }
-  } catch { /* CORS blocked */ }
 
-  // Attempt 3: Jina Reader with HTML return format (preserves CSS/structured data)
-  try {
-    const response = await fetch(JINA_READER_URL + url, {
-      headers: { Accept: 'text/html', 'X-Return-Format': 'html' },
-    })
-    if (response.ok) {
-      const text = await response.text()
-      if (text.length > 500) return text
-    }
-  } catch { /* Jina failure */ }
+    // Attempt 1: Local proxy (server-side fetch — no CORS restrictions)
+    try {
+      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
+      const response = await fetch(proxyUrl)
+      if (response.ok) {
+        const text = await response.text()
+        if (text.length > 500 && !isBlockedResponse(text)) return text
+        if (isBlockedResponse(text)) console.warn(`fetchRawHtml: proxy got blocked page (attempt ${attempt + 1})`)
+      }
+    } catch { /* proxy unavailable */ }
 
+    // Attempt 2: direct fetch (works when CORS allows it)
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+        redirect: 'follow',
+      })
+      if (response.ok) {
+        const text = await response.text()
+        if (text.length > 500 && !isBlockedResponse(text)) return text
+      }
+    } catch { /* CORS blocked */ }
+
+    // Attempt 3: Jina Reader with HTML return format (preserves CSS/structured data)
+    try {
+      const response = await fetch(JINA_READER_URL + url, {
+        headers: { Accept: 'text/html', 'X-Return-Format': 'html' },
+      })
+      if (response.ok) {
+        const text = await response.text()
+        if (text.length > 500 && !isBlockedResponse(text)) return text
+      }
+    } catch { /* Jina failure */ }
+  }
+
+  console.warn(`fetchRawHtml: all attempts failed for ${url}`)
   return ''
 }
 
@@ -745,21 +776,44 @@ export async function scrapeProductUrl(url: string): Promise<{
   detectedFonts: string[]
   detectedColors: string[]
   socialProof: SocialProof
+  warnings: string[]
 }> {
   let pageContent = ''
   let jinaData: any = {}
-  try {
-    const response = await fetch(JINA_READER_URL + url, {
-      headers: { Accept: 'application/json', 'X-Return-Format': 'markdown' },
-    })
-    if (response.ok) {
-      jinaData = await response.json()
-      pageContent = jinaData.data?.content || jinaData.data?.text || ''
-    } else {
-      console.warn(`Jina Reader returned ${response.status} — continuing with HTML/Shopify fallbacks`)
+  let siteBlocked = false
+  for (let jinaAttempt = 0; jinaAttempt < 3; jinaAttempt++) {
+    if (jinaAttempt > 0) {
+      console.log(`Jina Reader retry ${jinaAttempt}/2 for ${url}...`)
+      await new Promise(r => setTimeout(r, 2000 * jinaAttempt))
     }
-  } catch (e) {
-    console.warn('Jina Reader failed — continuing with HTML/Shopify fallbacks:', e)
+    try {
+      const response = await fetch(JINA_READER_URL + url, {
+        headers: { Accept: 'application/json', 'X-Return-Format': 'markdown' },
+      })
+      if (response.ok) {
+        jinaData = await response.json()
+        const content = jinaData.data?.content || jinaData.data?.text || ''
+        const warning = jinaData.data?.warning || ''
+        // Detect if Jina got a 403/blocked response from the target site
+        if (warning.includes('403') || warning.includes('Forbidden') || isBlockedResponse(content)) {
+          console.warn(`Jina Reader: site blocked (403) on attempt ${jinaAttempt + 1}`)
+          siteBlocked = true
+          continue // Retry
+        }
+        if (content.length > 100) {
+          pageContent = content
+          siteBlocked = false
+          break
+        }
+      } else {
+        console.warn(`Jina Reader returned ${response.status} — attempt ${jinaAttempt + 1}`)
+      }
+    } catch (e) {
+      console.warn(`Jina Reader failed (attempt ${jinaAttempt + 1}):`, e)
+    }
+  }
+  if (siteBlocked) {
+    console.warn(`Site appears to have anti-bot protection — relying on Bing Image Search fallback`)
   }
   const pageDomain = new URL(url).hostname.replace('www.', '')
 
@@ -1067,18 +1121,27 @@ export async function scrapeProductUrl(url: string): Promise<{
     if (productTitle) productTitle = productTitle.replace(/\s*[|–—-]\s*[^|–—-]+$/, '').trim()
   }
   if (!productTitle) {
-    productTitle = productSlug.replace(/-/g, ' ')
+    // Derive product title from URL path — e.g. "hyperboost-edge-running-shoes" → "Hyperboost Edge Running Shoes"
+    // Also use parent path segments for richer context (e.g. /us/hyperboost-edge-running-shoes/KI1913.html)
+    const titleParts = pathSegments
+      .filter(seg => !['us', 'en', 'uk', 'au', 'ca', 'shop', 'products', 'collections', 'pages'].includes(seg.toLowerCase()))
+      .map(seg => seg.replace(/\.(html?|php|aspx?)$/i, ''))
+      .map(seg => seg.replace(/-/g, ' '))
+      .filter(seg => seg.length > 1)
+    productTitle = titleParts.join(' ') || productSlug.replace(/-/g, ' ')
   }
   const brandName = pageDomain.split('.')[0]
 
-  if (productImages.length < 3) {
+  // When site is blocked, go straight to Bing with higher threshold
+  const bingThreshold = siteBlocked ? 0 : 3
+  if (productImages.length < bingThreshold || productImages.length < 3) {
     // Try multiple queries for best coverage — specific product name + brand
     const bingQueries = [
       `"${brandName}" "${productTitle}" product`,
       `${brandName} ${productTitle} product photo`,
       `site:${pageDomain} ${productTitle}`,
     ]
-    console.log(`Product images insufficient (${productImages.length}), trying Bing Image Search for "${productTitle}"...`)
+    console.log(`Product images insufficient (${productImages.length})${siteBlocked ? ' [site blocked]' : ''}, trying Bing Image Search for "${productTitle}"...`)
     for (const query of bingQueries) {
       const bingImages = await webImageSearch(query, 10)
       for (const img of bingImages) {
@@ -1470,6 +1533,18 @@ export async function scrapeProductUrl(url: string): Promise<{
     console.log(`Social proof found: rating=${socialProof.averageRating}, reviews=${socialProof.reviews?.length || 0}, customers=${socialProof.customerCount}`)
   }
 
+  // Build warnings for the UI
+  const warnings: string[] = []
+  if (siteBlocked) {
+    warnings.push(`${pageDomain} has anti-bot protection — some data was fetched via Bing fallback. Try again if results look incomplete.`)
+  }
+  if (!rawHtml && !siteBlocked) {
+    warnings.push(`Could not fetch page HTML from ${pageDomain}. Fonts and colors may be inaccurate.`)
+  }
+  if (productImages.length === 0) {
+    warnings.push(`No product images found. The site may require JavaScript rendering.`)
+  }
+
   return {
     pageContent,
     imageUrls: productImages.slice(0, 12),
@@ -1477,6 +1552,7 @@ export async function scrapeProductUrl(url: string): Promise<{
     detectedFonts,
     detectedColors,
     socialProof,
+    warnings,
   }
 }
 

@@ -318,9 +318,13 @@ export function BrandDnaPage() {
 
     try {
       setStatus('Scraping product page...')
-      const { pageContent, imageUrls, logoUrls, detectedFonts, detectedColors, socialProof } = await scrapeProductUrl(url.trim())
+      const { pageContent, imageUrls, logoUrls, detectedFonts, detectedColors, socialProof, warnings } = await scrapeProductUrl(url.trim())
 
       console.log(`Scraped: ${imageUrls.length} product images, ${logoUrls.length} logos, fonts: [${detectedFonts.join(', ')}], colors: [${detectedColors.join(', ')}]`)
+      // Surface scraper warnings as toasts so users know what happened
+      for (const warn of warnings) {
+        addError(warn)
+      }
 
       setStatus('Researching brand...')
       const result = await researchBrand(claudeApiKey, url.trim(), pageContent, detectedFonts, detectedColors, setStatus)

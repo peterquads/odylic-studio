@@ -211,11 +211,15 @@ export function ResultsGridPage() {
             </div>
             {isGenerating && (
               <button
-                onClick={() => getGenerationAbort()?.abort()}
-                className="p-1.5 rounded-lg hover:bg-black/[0.06] text-text-muted hover:text-error transition-colors"
+                onClick={() => {
+                  if (window.confirm('Stop generating? Completed ads will be kept.')) {
+                    getGenerationAbort()?.abort()
+                  }
+                }}
+                className="px-2.5 py-1 rounded-lg bg-black/[0.04] hover:bg-red-50 text-xs text-text-muted hover:text-error transition-colors border border-black/[0.06]"
                 title="Cancel generation"
               >
-                <X size={14} />
+                Cancel
               </button>
             )}
           </div>

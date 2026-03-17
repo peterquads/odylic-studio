@@ -109,9 +109,9 @@ async function callModel(
       throw new Error(`model_not_found:${model}`)
     }
 
-    if (response.status === 429 && attempt < maxRetries - 1) {
-      const delay = (attempt + 1) * 20000
-      console.log(`Rate limited (${model}), retrying in ${delay / 1000}s...`)
+    if ((response.status === 429 || response.status === 529) && attempt < maxRetries - 1) {
+      const delay = response.status === 529 ? (attempt + 1) * 15000 : (attempt + 1) * 20000
+      console.log(`${response.status === 529 ? 'Overloaded' : 'Rate limited'} (${model}), retrying in ${delay / 1000}s...`)
       await new Promise((r) => setTimeout(r, delay))
       continue
     }

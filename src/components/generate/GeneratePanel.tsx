@@ -515,6 +515,16 @@ export function GeneratePanelPage() {
     setGenerationAbort(null)
     setTimeout(() => setGenerationProgress({ current: 0, total: 0, stage: '' }), 3000)
 
+    // Strip batch-specific lines from brief, keep persistent rules (NEVER, ALWAYS, etc.)
+    if (creativeBrief.trim()) {
+      const persistent = /\b(never|always|every\s+ad|all\s+ads|brand\s+rule|style\s+guide|must\s+always|must\s+never|do\s+not\s+ever|across\s+all)\b/i
+      const kept = creativeBrief
+        .split('\n')
+        .filter(line => line.trim() && persistent.test(line))
+        .join('\n')
+      setCreativeBrief(kept)
+    }
+
     // Auto-save brand profile to IndexedDB after generation
     try {
       const store = useStore.getState()
