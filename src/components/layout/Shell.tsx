@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import {
   Palette,
   ImagePlus,
@@ -7,6 +7,8 @@ import {
   Settings,
   FolderOpen,
   Heart,
+  X,
+  AlertTriangle,
 } from 'lucide-react'
 import { useStore } from '../../store'
 import { ProfileManager } from '../profiles/ProfileManager'
@@ -92,6 +94,43 @@ export function Shell({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">{children}</main>
+
+      {/* Error Toasts */}
+      <ErrorToasts />
+    </div>
+  )
+}
+
+function ErrorToasts() {
+  const errors = useStore((s) => s.errors)
+  const dismissError = useStore((s) => s.dismissError)
+
+  // Auto-dismiss after 8 seconds
+  useEffect(() => {
+    if (errors.length === 0) return
+    const timer = setTimeout(() => dismissError(0), 8000)
+    return () => clearTimeout(timer)
+  }, [errors, dismissError])
+
+  if (errors.length === 0) return null
+
+  return (
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
+      {errors.map((msg, i) => (
+        <div
+          key={`${i}-${msg.slice(0, 20)}`}
+          className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 shadow-lg animate-in slide-in-from-right"
+        >
+          <AlertTriangle size={14} className="text-red-500 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-red-700 flex-1">{msg}</p>
+          <button
+            onClick={() => dismissError(i)}
+            className="p-0.5 rounded hover:bg-red-100 text-red-400 hover:text-red-600 flex-shrink-0"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ))}
     </div>
   )
 }

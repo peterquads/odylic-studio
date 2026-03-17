@@ -11,7 +11,7 @@ import {
   FileText,
   Heart,
 } from 'lucide-react'
-import { useStore, selectLatestVersions, selectAllVersions } from '../../store'
+import { useStore, selectLatestVersions, selectAllVersions, getGenerationAbort } from '../../store'
 import { GlassBadge } from '../layout/GlassCard'
 import { downloadSingleImage, downloadAllAsZip } from '../../utils/download'
 import { RegionEditor } from './RegionEditor'
@@ -209,6 +209,15 @@ export function ResultsGridPage() {
                 />
               </div>
             </div>
+            {isGenerating && (
+              <button
+                onClick={() => getGenerationAbort()?.abort()}
+                className="p-1.5 rounded-lg hover:bg-black/[0.06] text-text-muted hover:text-error transition-colors"
+                title="Cancel generation"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
       )}

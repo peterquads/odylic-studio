@@ -22,6 +22,7 @@ rsync -av --delete \
   --exclude templates \
   --exclude .git \
   --exclude scripts \
+  --exclude store.ts \
   "$MAIN/src/" "$DEPLOY/src/"
 
 # Sync other important files (only if they exist)

@@ -11,7 +11,7 @@ import {
   Plus,
   Diamond,
 } from 'lucide-react'
-import { useStore } from '../../store'
+import { useStore, setGenerationAbort } from '../../store'
 import { GlassCard } from '../layout/GlassCard'
 import { findMatchingTemplates, filterCatalogByCategory, buildGenerationPrompt, qaCheckImage, checkProductFidelity, extractProductFacts, analyzeAssetsBatch } from '../../services/claude'
 import { generateImage, resizeImage, editImage } from '../../services/gemini'
@@ -46,6 +46,7 @@ export function GeneratePanelPage() {
   const setStep = useStore((s) => s.setStep)
   const customTemplates = useStore((s) => s.customTemplates)
   const excludeBuiltInTemplates = useStore((s) => s.excludeBuiltInTemplates)
+  const addError = useStore((s) => s.addError)
 
   const [creativeBrief, setCreativeBrief] = useState('')
 
@@ -61,6 +62,8 @@ export function GeneratePanelPage() {
 
   const handleGenerate = async () => {
     if (!canGenerate || !brandDna) return
+    const abortCtrl = new AbortController()
+    setGenerationAbort(abortCtrl)
     setIsGenerating(true)
 
     // Snapshot the active brand — if user switches profiles mid-generation, skip stale results
@@ -295,6 +298,7 @@ export function GeneratePanelPage() {
             const d = raw.match(/"message":"([^"]+)"/)?.[1] || raw
             reason = `Invalid request: ${d}`
           }
+          addError(`Ad failed: ${reason}`)
           safeAddResult({
             id: generateId(),
             imageUrl: '',
@@ -321,6 +325,7 @@ export function GeneratePanelPage() {
       // Outer loop = concepts, inner loop = sizes
       {
         for (let c = 0; c < conceptCount; c++) {
+          if (abortCtrl.signal.aborted) break
           const conceptId = generateId()
           const filename = templateFilenames[c]
 
@@ -425,6 +430,7 @@ export function GeneratePanelPage() {
           let masterImageUrl: string | null = null
 
           for (const currentRatio of orderedSizes) {
+            if (abortCtrl.signal.aborted) break
             if (masterImageUrl && currentRatio !== masterRatio) {
               // RESIZE existing master — sends only 1 image
               const adNum = `${globalIdx + 1}/${totalQuantity}`
@@ -496,10 +502,17 @@ export function GeneratePanelPage() {
       else if (raw.includes('rate_limit') || raw.includes('429')) reason = 'Rate limited — wait a moment and retry'
       else if (raw.includes('credit') || raw.includes('billing')) reason = 'API credits exhausted'
       setGenerationProgress({ current: 0, total: 0, stage: `Error: ${reason}` })
+      addError(`Generation failed: ${reason}`)
     }
 
-    setGenerationProgress({ current: totalQuantity, total: totalQuantity, stage: `Done! ${totalQuantity} ads generated.` })
+    const completed = useStore.getState().results.length
+    if (abortCtrl.signal.aborted) {
+      setGenerationProgress({ current: 0, total: 0, stage: `Cancelled — ${completed} ads kept` })
+    } else {
+      setGenerationProgress({ current: totalQuantity, total: totalQuantity, stage: `Done! ${totalQuantity} ads generated.` })
+    }
     setIsGenerating(false)
+    setGenerationAbort(null)
     setTimeout(() => setGenerationProgress({ current: 0, total: 0, stage: '' }), 3000)
 
     // Auto-save brand profile to IndexedDB after generation

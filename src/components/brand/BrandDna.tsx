@@ -298,6 +298,7 @@ export function BrandDnaPage() {
     updateAsset,
     resetForNewBrand,
     setStep,
+    addError,
   } = useStore()
 
   const [url, setUrl] = useState('')
@@ -577,7 +578,9 @@ export function BrandDnaPage() {
 
       setStatus('')
     } catch (e: any) {
-      setError(e.message || 'Research failed')
+      const msg = e.message || 'Research failed'
+      setError(msg)
+      addError(`Research failed: ${msg}`)
       setStatus('')
     } finally {
       setIsResearching(false)

@@ -369,6 +369,11 @@ export interface AppState {
   savedAdIds: Set<string>
   toggleSavedAd: (id: string) => void
 
+  // Errors (toast notifications)
+  errors: string[]
+  addError: (msg: string) => void
+  dismissError: (idx: number) => void
+
   // Reset
   resetForNewBrand: () => void
 
