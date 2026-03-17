@@ -546,11 +546,17 @@ async function fetchShopifyProductJson(url: string): Promise<{ images: string[];
       const cdnImages = new Set<string>()
 
       // Extract Shopify CDN image URLs from anywhere in the HTML (scripts, data attributes, etc.)
-      const cdnRegex = /https?:\/\/cdn\.shopify\.com\/s\/files\/[^"'\s<>)]+\.(?:jpg|jpeg|png|webp)/gi
+      // Match cdn.shopify.com AND any domain's /cdn/shop/ paths (BERO uses berobrewing.com/cdn/...)
+      // Also match protocol-relative URLs (//domain.com/cdn/...)
+      const cdnRegex = /(?:https?:)?\/\/(?:cdn\.shopify\.com\/s\/files|[a-z0-9.-]+\/cdn\/shop\/(?:files|products|images))\/[^"'\s<>),]+\.(?:jpg|jpeg|png|webp)/gi
       const allCdnImages: string[] = []
       let m
       while ((m = cdnRegex.exec(html)) !== null) {
-        const imgUrl = m[0].replace(/&amp;/g, '&')
+        let imgUrl = m[0].replace(/&amp;/g, '&')
+        // Normalize protocol-relative to https
+        if (imgUrl.startsWith('//')) imgUrl = 'https:' + imgUrl
+        // Strip srcset width descriptors (e.g. " 800w" at end)
+        imgUrl = imgUrl.replace(/\s+\d+w$/, '')
         // Skip tiny icons, nav images, badges
         if (/icon|badge|payment|social|sprite|logo|favicon/i.test(imgUrl)) continue
         if (!cdnImages.has(imgUrl)) {
@@ -559,13 +565,22 @@ async function fetchShopifyProductJson(url: string): Promise<{ images: string[];
         }
       }
 
-      // Also extract from OG/meta tags
+      // Also extract from OG/meta tags — accept any image domain (not just cdn.shopify.com)
       const ogImg = html.match(/property="og:image"[^>]*content="([^"]+)"/i)?.[1] ||
                      html.match(/content="([^"]+)"[^>]*property="og:image"/i)?.[1]
-      if (ogImg && ogImg.includes('cdn.shopify.com') && !cdnImages.has(ogImg)) {
-        cdnImages.add(ogImg)
-        allCdnImages.unshift(ogImg) // OG image first
+      if (ogImg) {
+        let ogUrl = ogImg.startsWith('//') ? 'https:' + ogImg : ogImg
+        if (ogUrl.startsWith('http') && !cdnImages.has(ogUrl)) {
+          cdnImages.add(ogUrl)
+          allCdnImages.unshift(ogUrl) // OG image first
+        }
       }
+
+      // Extract product title from OG/JSON-LD for smarter fallback searches
+      const ogTitle = html.match(/property="og:title"[^>]*content="([^"]+)"/i)?.[1] ||
+                       html.match(/content="([^"]+)"[^>]*property="og:title"/i)?.[1] || ''
+      const htmlTitle = html.match(/<title[^>]*>([^<]+)/i)?.[1]?.trim() || ''
+      const productTitle = ogTitle || htmlTitle
 
       if (allCdnImages.length > 0) {
         // Try to filter to product-specific images using URL slug
@@ -587,8 +602,7 @@ async function fetchShopifyProductJson(url: string): Promise<{ images: string[];
           if (!src.includes('width=')) return src + (src.includes('?') ? '&' : '?') + 'width=1200'
           return src
         })
-        const titleMatch = html.match(/<title[^>]*>([^<]+)/i)
-        return { images, title: titleMatch?.[1]?.trim() || '' }
+        return { images, title: productTitle }
       }
     }
   } catch { /* Hydrogen fallback failed */ }
@@ -1043,20 +1057,40 @@ export async function scrapeProductUrl(url: string): Promise<{
       }
     }
   }
-  // 4. Google Image Search — nuclear fallback when page is unfetchable (429, bot protection, etc.)
+  // 4. Bing Image Search — fallback when scraping found too few images
+  // Extract product title from OG/JSON-LD/Shopify for precise queries
+  let productTitle = shopifyProduct?.title || ''
+  if (!productTitle && rawHtml) {
+    productTitle = rawHtml.match(/property="og:title"[^>]*content="([^"]+)"/i)?.[1] ||
+                   rawHtml.match(/content="([^"]+)"[^>]*property="og:title"/i)?.[1] || ''
+    // Strip " - BrandName" / " | BrandName" suffix from OG title
+    if (productTitle) productTitle = productTitle.replace(/\s*[|–—-]\s*[^|–—-]+$/, '').trim()
+  }
+  if (!productTitle) {
+    productTitle = productSlug.replace(/-/g, ' ')
+  }
+  const brandName = pageDomain.split('.')[0]
+
   if (productImages.length < 3) {
-    const brandName = pageDomain.split('.')[0]
-    const productName = productSlug.replace(/-/g, ' ')
-    const query = `${brandName} ${productName} product photo`
-    console.log(`Product images insufficient (${productImages.length}), trying Google Image Search: "${query}"`)
-    const googleImages = await webImageSearch(query, 12)
-    for (const img of googleImages) {
-      if (!productImages.includes(img) && !isJunkImage(img)) {
+    // Try multiple queries for best coverage — specific product name + brand
+    const bingQueries = [
+      `"${brandName}" "${productTitle}" product`,
+      `${brandName} ${productTitle} product photo`,
+      `site:${pageDomain} ${productTitle}`,
+    ]
+    console.log(`Product images insufficient (${productImages.length}), trying Bing Image Search for "${productTitle}"...`)
+    for (const query of bingQueries) {
+      const bingImages = await webImageSearch(query, 10)
+      for (const img of bingImages) {
+        if (productImages.includes(img) || isJunkImage(img)) continue
+        // Skip stock photo sites
+        if (/shutterstock|istock|getty|dreamstime|alamy|depositphoto/i.test(img)) continue
         productImages.push(img)
       }
+      if (productImages.length >= 6) break // Got enough
     }
     if (productImages.length > 0) {
-      console.log(`Google Image Search brought total to ${productImages.length} product images`)
+      console.log(`Bing Image Search brought total to ${productImages.length} product images`)
     }
   }
   // 5. Markdown image extraction already ran above as earlier fallback
@@ -1391,39 +1425,40 @@ export async function scrapeProductUrl(url: string): Promise<{
     return `[${score}] ${short}`
   }))
 
-  // ===== WEB IMAGE SEARCH — always runs to supplement scraping =====
-  // This is the safety net: product images are almost always findable via search
+  // ===== BING IMAGE SEARCH — always runs to supplement scraping =====
+  // Safety net: product images are almost always findable via Bing
   // even when the page itself is impossible to scrape (SPAs, JS-rendered, CORS, etc.)
-  try {
-    const brandGuess = pageDomain.split('.')[0]
-    const searchQuery = productSlug && productSlug !== brandGuess
-      ? `${brandGuess} ${productSlug.replace(/-/g, ' ')} product photo`
-      : `${brandGuess} product photo official`
-    const searchResults = await jinaSearch(searchQuery, 5)
-    const searchUrlRegex = /https?:\/\/[^\s"'<>]+\.(?:png|jpg|jpeg|webp)/gi
-    const searchImageUrls = searchResults.match(searchUrlRegex) || []
+  // Uses product title (from OG/JSON-LD/Shopify) for accurate variant-specific results
+  if (productImages.length < 8) {
+    try {
+      const supplementQuery = productTitle && productTitle !== brandName
+        ? `"${brandName}" "${productTitle}" product`
+        : `${brandName} ${productSlug.replace(/-/g, ' ')} product`
+      console.log(`Bing supplement search: "${supplementQuery}" (have ${productImages.length} images)`)
+      const bingResults = await webImageSearch(supplementQuery, 10)
 
-    // Filter: only keep images from reputable sources, skip tiny icons
-    const existingSet = new Set(productImages.map((u) => {
-      try { return new URL(u).pathname } catch { return u }
-    }))
-    let added = 0
-    for (const imgUrl of searchImageUrls) {
-      if (isJunkImage(imgUrl)) continue
-      // Skip if we already have this image (by pathname)
-      try {
-        if (existingSet.has(new URL(imgUrl).pathname)) continue
-      } catch { continue }
-      productImages.push(imgUrl)
-      existingSet.add(new URL(imgUrl).pathname)
-      added++
-      if (productImages.length >= 12) break
+      const existingSet = new Set(productImages.map((u) => {
+        try { return new URL(u).pathname } catch { return u }
+      }))
+      let added = 0
+      for (const imgUrl of bingResults) {
+        if (isJunkImage(imgUrl)) continue
+        // Skip stock photo sites
+        if (/shutterstock|istock|getty|dreamstime|alamy|depositphoto/i.test(imgUrl)) continue
+        try {
+          if (existingSet.has(new URL(imgUrl).pathname)) continue
+        } catch { continue }
+        productImages.push(imgUrl)
+        existingSet.add(new URL(imgUrl).pathname)
+        added++
+        if (productImages.length >= 12) break
+      }
+      if (added > 0) {
+        console.log(`Bing supplement added ${added} product images (total: ${productImages.length})`)
+      }
+    } catch {
+      console.warn('Bing image search supplement failed')
     }
-    if (added > 0) {
-      console.log(`Web search added ${added} product images (total: ${productImages.length})`)
-    }
-  } catch {
-    console.warn('Web image search supplement failed')
   }
 
   // Deduplicate logos too

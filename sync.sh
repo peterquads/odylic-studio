@@ -25,7 +25,7 @@ rsync -av --delete \
   "$MAIN/src/" "$DEPLOY/src/"
 
 # Sync other important files (only if they exist)
-for f in index.html tailwind.config.js postcss.config.js tsconfig.json tsconfig.node.json; do
+for f in index.html vite.config.ts tailwind.config.js postcss.config.js tsconfig.json tsconfig.node.json; do
   [ -f "$MAIN/$f" ] && cp "$MAIN/$f" "$DEPLOY/$f"
 done
 

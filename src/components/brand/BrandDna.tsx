@@ -3,7 +3,7 @@ import { Search, Loader2, Globe, ArrowRight, Plus, X } from 'lucide-react'
 import { useStore } from '../../store'
 import { scrapeProductUrl, researchBrand, fetchImageAsBase64, searchLogosWithBrandName } from '../../services/scraper'
 import { pickBestLogo, analyzeAssetsBatch, validateBrandColors } from '../../services/claude'
-import { generateId } from '../../utils/image'
+import { generateId, detectMediaType } from '../../utils/image'
 import type { UploadedAsset, LogoCandidate } from '../../types'
 import { LogoChecker } from './LogoChecker'
 import googleFonts from '../../data/google-fonts.json'
@@ -389,7 +389,7 @@ export function BrandDnaPage() {
             downloaded++
             setStatus(`Downloading logos (${downloadedLogos.length + 1}/${logoCandidatesToTry.length})...`)
             const name = imgUrl.split('/').pop()?.split('?')[0] || 'logo.png'
-            const mimeType = base64.startsWith('data:') ? (base64.split(';')[0]?.split(':')[1] || 'image/png') : 'image/png'
+            const mimeType = detectMediaType(base64)
             downloadedLogos.push({ base64, sourceUrl: imgUrl, name, mimeType })
             console.log(`Downloaded logo candidate ${downloadedLogos.length}: ${name}`)
           } else {
@@ -505,7 +505,7 @@ export function BrandDnaPage() {
         const asset: UploadedAsset = {
           id: generateId(),
           name,
-          mimeType: base64.split(';')[0].split(':')[1] || 'image/jpeg',
+          mimeType: detectMediaType(base64),
           base64,
           analysisStatus: guessedType ? 'complete' : 'pending',
           source: 'scraped',
@@ -558,7 +558,7 @@ export function BrandDnaPage() {
             ? (await Promise.all(imageUrls.slice(0, 2).map(async (u) => {
                 try {
                   const b64 = await fetchImageAsBase64(u)
-                  return b64 ? { base64: b64, mimeType: 'image/jpeg' } : null
+                  return b64 ? { base64: b64, mimeType: detectMediaType(b64) } : null
                 } catch { return null }
               }))).filter(Boolean) as { base64: string; mimeType: string }[]
             : []

@@ -1098,9 +1098,10 @@ POSITION sizes: small, medium, large, full-width, full-height`,
     // Attach the template image so Sonnet can compare element-by-element
     if (templateImageBase64) {
       const templateData = stripDataUri(templateImageBase64)
+      const templateMime = safeMediaType(undefined, templateImageBase64)
       qaContent.push({
         type: 'image',
-        source: { type: 'base64', media_type: 'image/png', data: templateData },
+        source: { type: 'base64', media_type: templateMime, data: templateData },
       })
     }
 

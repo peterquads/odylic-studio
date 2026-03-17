@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai'
 import type { AspectRatio, ModelTier } from '../types'
 import { notifyModelUsed } from './claude'
+import { detectMediaType } from '../utils/image'
 
 // Nano Banana 2 (best image gen) — use exclusively
 const MODEL_NANO_BANANA_2 = 'gemini-3.1-flash-image-preview'
@@ -149,7 +150,7 @@ export async function resizeImage(
   const masterData = masterImageBase64.includes(',')
     ? masterImageBase64.split(',')[1]
     : masterImageBase64
-  const masterMime = masterImageBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg'
+  const masterMime = detectMediaType(masterImageBase64)
 
   const resizePrompt = `Image 1 is a FINISHED advertisement at ${masterRatio}.
 Reproduce this EXACT ad at ${targetRatio}.
@@ -221,8 +222,8 @@ export async function editImage(
     : maskBase64
 
   const parts: any[] = [
-    { inlineData: { data: originalData, mimeType: 'image/png' } },
-    { inlineData: { data: maskData, mimeType: 'image/png' } },
+    { inlineData: { data: originalData, mimeType: detectMediaType(originalImageBase64) } },
+    { inlineData: { data: maskData, mimeType: 'image/png' } }, // Masks are always PNG (canvas-generated)
   ]
 
   // Attach reference images (product photos, logos) for region edits

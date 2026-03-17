@@ -17,7 +17,7 @@ import { useStore } from '../../store'
 import { GlassBadge } from '../layout/GlassCard'
 import { analyzeAssetsBatch, analyzeAsset } from '../../services/claude'
 import { webImageSearch, fetchImageAsBase64 } from '../../services/scraper'
-import { fileToBase64, generateId } from '../../utils/image'
+import { fileToBase64, generateId, detectMediaType } from '../../utils/image'
 import type { UploadedAsset, AssetType } from '../../types'
 
 const MAX_FILE_SIZE_MB = 10
@@ -112,9 +112,7 @@ export function AssetLibraryPage() {
       const base64 = await fetchImageAsBase64(imgUrl)
       if (base64) {
         const name = imgUrl.split('/').pop()?.split('?')[0]?.slice(0, 60) || 'image.jpg'
-        const mimeType = base64.startsWith('data:image/png') ? 'image/png'
-          : base64.startsWith('data:image/webp') ? 'image/webp'
-          : 'image/jpeg'
+        const mimeType = detectMediaType(base64)
         const asset: UploadedAsset = {
           id: generateId(), name, mimeType,
           base64, analysisStatus: 'pending', source: 'scraped',

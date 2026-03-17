@@ -1,10 +1,32 @@
 export function detectMediaType(base64: string): string {
+  // Also check the data URI header for exotic formats the browser decoded
+  if (base64.startsWith('data:')) {
+    const headerMime = base64.split(';')[0]?.split(':')[1] || ''
+    // For formats we can detect by magic bytes, fall through to byte detection
+    // For exotic formats, trust the header
+    if (headerMime === 'image/avif' || headerMime === 'image/heic' || headerMime === 'image/heif' ||
+        headerMime === 'image/svg+xml' || headerMime === 'image/tiff' || headerMime === 'image/bmp') {
+      return headerMime
+    }
+  }
   const data = base64.includes(',') ? base64.split(',')[1] : base64
-  const bytes = atob(data.substring(0, 24))
+  if (!data || data.length < 16) return 'image/jpeg'
+  const bytes = atob(data.substring(0, 32))
   if (bytes.charCodeAt(0) === 0xff && bytes.charCodeAt(1) === 0xd8) return 'image/jpeg'
   if (bytes.substring(1, 4) === 'PNG') return 'image/png'
   if (bytes.substring(0, 4) === 'RIFF' && bytes.substring(8, 12) === 'WEBP') return 'image/webp'
   if (bytes.substring(0, 3) === 'GIF') return 'image/gif'
+  // HEIC/HEIF: ftyp box at offset 4, brand heic/heix/mif1
+  if (bytes.substring(4, 8) === 'ftyp') {
+    const brand = bytes.substring(8, 12)
+    if (brand === 'heic' || brand === 'heix' || brand === 'mif1') return 'image/heic'
+    if (brand === 'avif' || brand === 'avis') return 'image/avif'
+  }
+  // BMP
+  if (bytes.substring(0, 2) === 'BM') return 'image/bmp'
+  // TIFF (little-endian II or big-endian MM)
+  if ((bytes.substring(0, 2) === 'II' || bytes.substring(0, 2) === 'MM') &&
+      bytes.charCodeAt(2) === 42) return 'image/tiff'
   return 'image/jpeg'
 }
 
