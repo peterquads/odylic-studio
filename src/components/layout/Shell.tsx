@@ -31,7 +31,9 @@ export function Shell({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <nav className="w-56 flex-shrink-0 glass !rounded-none !border-r border-t-0 border-b-0 border-l-0 flex flex-col" style={{ borderRadius: 0 }}>
         <div className="px-5 py-4 border-b border-black/[0.06] flex items-center gap-2">
-          <img src="/odylic-logo.png" alt="Odylic" className="h-7 object-contain" />
+          <a href="https://www.odylicmedia.com/" target="_blank" rel="noopener noreferrer">
+            <img src="/odylic-logo.png" alt="Odylic" className="h-7 object-contain hover:opacity-80 transition-opacity" />
+          </a>
           <span className="text-[9px] tracking-[0.25em] uppercase text-text-muted leading-none">Studio</span>
         </div>
 

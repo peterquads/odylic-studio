@@ -73,7 +73,9 @@ export function ApiKeys() {
   return (
     <div className="max-w-xl mx-auto py-24 px-6">
       <div className="text-center mb-12">
-        <img src="/odylic-logo.png" alt="Odylic" className="h-12 mx-auto mb-1" />
+        <a href="https://www.odylicmedia.com/" target="_blank" rel="noopener noreferrer">
+          <img src="/odylic-logo.png" alt="Odylic" className="h-12 mx-auto mb-1 hover:opacity-80 transition-opacity cursor-pointer" />
+        </a>
         <p className="text-[10px] tracking-[0.25em] uppercase text-text-muted">
           Studio
         </p>
@@ -409,6 +411,23 @@ function AdvancedSettings() {
               </div>
             </div>
           )}
+
+          {/* Uninstall */}
+          <div className="pt-3 mt-3 border-t border-black/[0.06]">
+            <button
+              onClick={() => {
+                if (window.confirm('This will clear all saved data (API keys, brand profiles, generated ads). The app files at ~/odylic-studio will remain — delete that folder manually to fully uninstall.\n\nContinue?')) {
+                  localStorage.clear()
+                  indexedDB.deleteDatabase('odylic-studio')
+                  indexedDB.deleteDatabase('odylic-studio-blobs')
+                  window.location.reload()
+                }
+              }}
+              className="text-[11px] text-red-400/70 hover:text-red-500 transition-colors"
+            >
+              Reset all data
+            </button>
+          </div>
         </div>
       )}
     </div>
