@@ -1,7 +1,8 @@
 #!/bin/bash
 # ─────────────────────────────────────────
 #  Odylic Studio — One-command installer
-#  Usage: curl -fsSL https://raw.githubusercontent.com/peterquads/odylic-studio/main/install.sh | bash
+#  macOS / Linux: curl -fsSL https://raw.githubusercontent.com/peterquads/odylic-studio/main/install.sh | bash
+#  Windows (Git Bash): same command, or run install.bat
 # ─────────────────────────────────────────
 
 set -e
@@ -21,8 +22,11 @@ if ! command -v node &> /dev/null; then
   echo "  Install it from: https://nodejs.org"
   echo ""
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "  Opening download page..."
     open "https://nodejs.org"
+  elif command -v start &> /dev/null; then
+    start "https://nodejs.org"
+  elif command -v xdg-open &> /dev/null; then
+    xdg-open "https://nodejs.org"
   fi
   exit 1
 fi
@@ -54,11 +58,12 @@ if [ ! -d "$INSTALL_DIR/templates" ] || [ "$(ls -1 "$INSTALL_DIR/templates" 2>/d
   if [ -z "$RELEASE_URL" ]; then
     echo "  ⚠ Could not find template download. The app will still work with custom templates only."
   else
-    curl -fSL -o /tmp/odylic-templates.zip "$RELEASE_URL"
+    TMP_ZIP="${TMPDIR:-/tmp}/odylic-templates.zip"
+    curl -fSL -o "$TMP_ZIP" "$RELEASE_URL"
     echo "  Extracting templates..."
     mkdir -p "$INSTALL_DIR/templates"
-    unzip -qo /tmp/odylic-templates.zip -d "$INSTALL_DIR/templates"
-    rm -f /tmp/odylic-templates.zip
+    unzip -qo "$TMP_ZIP" -d "$INSTALL_DIR/templates"
+    rm -f "$TMP_ZIP"
     echo "  ✓ $(ls -1 "$INSTALL_DIR/templates" | wc -l | tr -d ' ') templates installed"
   fi
 else
@@ -73,12 +78,21 @@ npm install --loglevel=error 2>&1 | tail -1
 echo ""
 echo "  ✓ Odylic Studio installed at $INSTALL_DIR"
 echo ""
+
+# 6. Create desktop app / shortcut
+if [ -f "$INSTALL_DIR/scripts/create-app.sh" ]; then
+  bash "$INSTALL_DIR/scripts/create-app.sh" "$INSTALL_DIR"
+fi
+
+echo ""
 echo "  Starting the app..."
 echo ""
 
-# 6. Open browser + start server
+# 7. Open browser + start server
 if [[ "$OSTYPE" == "darwin"* ]]; then
   (sleep 2 && open "http://localhost:3000") &
+elif command -v start &> /dev/null; then
+  (sleep 2 && start "http://localhost:3000") &
 elif command -v xdg-open &> /dev/null; then
   (sleep 2 && xdg-open "http://localhost:3000") &
 fi
