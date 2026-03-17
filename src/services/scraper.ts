@@ -1940,20 +1940,34 @@ async function callWithRetry(
   maxTokens: number
 ): Promise<string> {
   for (let attempt = 0; attempt < 5; attempt++) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        messages,
-      }),
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 60000)
+    let response: Response
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          messages,
+        }),
+      })
+    } catch (e: any) {
+      clearTimeout(timeout)
+      if (e.name === 'AbortError' && attempt < 4) {
+        console.log(`Request timeout (${model}), retrying...`)
+        continue
+      }
+      throw e
+    }
+    clearTimeout(timeout)
 
     if (response.ok) {
       const data = await response.json()
@@ -1964,15 +1978,26 @@ async function callWithRetry(
       throw new Error(`model_not_found:${model}`)
     }
 
-    if (response.status === 429 && attempt < 4) {
-      const delay = (attempt + 1) * 20000
-      console.log(`Rate limited (${model}), waiting ${delay / 1000}s...`)
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`Claude API auth error (${response.status}): Check your API key`)
+    }
+
+    if ((response.status === 429 || response.status === 529) && attempt < 4) {
+      const delay = response.status === 529 ? (attempt + 1) * 15000 : (attempt + 1) * 20000
+      console.log(`${response.status === 529 ? 'Overloaded' : 'Rate limited'} (${model}), waiting ${delay / 1000}s...`)
       await new Promise((r) => setTimeout(r, delay))
       continue
     }
 
-    const err = await response.text()
-    throw new Error(`Claude API error: ${err}`)
+    // Parse error safely — never expose raw API response (may contain request details)
+    let errType = ''
+    try {
+      const errJson = await response.json()
+      errType = errJson?.error?.type || errJson?.error?.message || ''
+    } catch {
+      errType = `HTTP ${response.status}`
+    }
+    throw new Error(`Claude API error (${response.status}): ${errType || 'Request failed'}`)
   }
   throw new Error('Max retries exceeded')
 }

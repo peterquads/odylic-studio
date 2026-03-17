@@ -116,16 +116,23 @@ async function callModel(
       return data.content[0].text.trim()
     }
 
-    const errText = await response.text()
+    // Parse error safely — never expose raw API response (may contain key/request details)
+    let errType = ''
+    try {
+      const errJson = await response.json()
+      errType = errJson?.error?.type || errJson?.error?.message || ''
+    } catch {
+      errType = `HTTP ${response.status}`
+    }
 
     // Model not found - don't retry, throw immediately so caller can try next model
     if (response.status === 404) {
       throw new Error(`model_not_found:${model}`)
     }
 
-    // Auth errors - don't retry, fail immediately
+    // Auth errors - don't retry, fail immediately. Never include raw response.
     if (response.status === 401 || response.status === 403) {
-      throw new Error(`Claude API auth error (${response.status}): ${errText}`)
+      throw new Error(`Claude API auth error (${response.status}): Check your API key`)
     }
 
     if ((response.status === 429 || response.status === 529) && attempt < maxRetries - 1) {
@@ -135,7 +142,7 @@ async function callModel(
       continue
     }
 
-    throw new Error(`Claude API error (${model}): ${errText}`)
+    throw new Error(`Claude API error (${response.status}): ${errType || 'Request failed'}`)
   }
 
   throw new Error('Max retries exceeded')

@@ -582,7 +582,14 @@ export function BrandDnaPage() {
 
       setStatus('')
     } catch (e: any) {
-      const msg = e.message || 'Research failed'
+      const raw = e.message || 'Research failed'
+      let msg = 'Unexpected error — check console for details'
+      if (raw.includes('auth') || raw.includes('401') || raw.includes('403')) msg = 'API key invalid — check your key in Setup'
+      else if (raw.includes('rate_limit') || raw.includes('429')) msg = 'Rate limited — wait a moment and retry'
+      else if (raw.includes('529') || raw.includes('Overloaded')) msg = 'API overloaded — try again shortly'
+      else if (raw.includes('credit') || raw.includes('billing')) msg = 'API credits exhausted'
+      else if (raw.includes('timeout') || raw.includes('AbortError')) msg = 'Request timed out — try again'
+      else if (raw.includes('JSON')) msg = 'AI returned unexpected response — try again'
       setError(msg)
       addError(`Research failed: ${msg}`)
       setStatus('')

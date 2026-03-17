@@ -288,16 +288,16 @@ export function GeneratePanelPage() {
         } catch (e: any) {
           console.error('Generation failed:', e)
           const raw = e.message || 'Unknown error'
-          let reason = raw
+          let reason = 'Unexpected error — check console for details'
           if (raw.includes('exceeds 5 MB')) reason = 'Image too large (>5 MB) — try smaller product images'
           else if (raw.includes('not supported')) reason = 'Unsupported image format — try JPG or PNG'
           else if (raw.includes('rate_limit') || raw.includes('429')) reason = 'API rate limited — wait a moment and retry'
+          else if (raw.includes('529') || raw.includes('Overloaded')) reason = 'API overloaded — retrying automatically'
           else if (raw.includes('credit') || raw.includes('billing')) reason = 'API credits exhausted — top up your account'
+          else if (raw.includes('auth') || raw.includes('401') || raw.includes('403')) reason = 'API key invalid — check your key in Setup'
           else if (raw.includes('model_not_found') || raw.includes('404')) reason = 'AI model unavailable — try again later'
-          else if (raw.includes('invalid_request')) {
-            const d = raw.match(/"message":"([^"]+)"/)?.[1] || raw
-            reason = `Invalid request: ${d}`
-          }
+          else if (raw.includes('invalid_request')) reason = 'Invalid request — try different images or settings'
+          else if (raw.includes('timeout') || raw.includes('AbortError')) reason = 'Request timed out — try again'
           addError(`Ad failed: ${reason}`)
           safeAddResult({
             id: generateId(),
@@ -496,11 +496,14 @@ export function GeneratePanelPage() {
     } catch (e: any) {
       console.error('Pipeline failed:', e)
       const raw = e.message || 'Unknown error'
-      let reason = raw
+      let reason = 'Unexpected error — check console for details'
       if (raw.includes('exceeds 5 MB')) reason = 'Product images too large — try uploading smaller images'
       else if (raw.includes('not supported')) reason = 'Unsupported image format — use JPG or PNG'
       else if (raw.includes('rate_limit') || raw.includes('429')) reason = 'Rate limited — wait a moment and retry'
+      else if (raw.includes('529') || raw.includes('Overloaded')) reason = 'API overloaded — try again shortly'
+      else if (raw.includes('auth') || raw.includes('401') || raw.includes('403')) reason = 'API key invalid — check Setup'
       else if (raw.includes('credit') || raw.includes('billing')) reason = 'API credits exhausted'
+      else if (raw.includes('timeout') || raw.includes('AbortError')) reason = 'Request timed out — try again'
       setGenerationProgress({ current: 0, total: 0, stage: `Error: ${reason}` })
       addError(`Generation failed: ${reason}`)
     }
