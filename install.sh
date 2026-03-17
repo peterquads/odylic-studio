@@ -101,16 +101,28 @@ if [ -f "$INSTALL_DIR/scripts/create-app.sh" ]; then
 fi
 
 echo ""
-echo "  Starting the app..."
+echo "  ╔═══════════════════════════════════════════╗"
+echo "  ║  ✓ Installation complete!                 ║"
+echo "  ║                                           ║"
+echo "  ║  Double-click 'Odylic Studio' on your     ║"
+echo "  ║  Desktop to launch the app anytime.       ║"
+echo "  ╚═══════════════════════════════════════════╝"
+echo ""
+echo "  Launching now..."
 echo ""
 
-# 7. Open browser + start server
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  (sleep 2 && open "http://localhost:3000") &
-elif command -v start &> /dev/null; then
-  (sleep 2 && start "http://localhost:3000") &
-elif command -v xdg-open &> /dev/null; then
-  (sleep 2 && xdg-open "http://localhost:3000") &
+# 7. Launch the app (starts server + opens chromeless window)
+if [ -d "$HOME/Desktop/Odylic Studio.app" ]; then
+  open "$HOME/Desktop/Odylic Studio.app"
+else
+  # Fallback: start server + open browser directly
+  cd "$INSTALL_DIR"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    (sleep 3 && open "http://localhost:3000") &
+  elif command -v start &> /dev/null; then
+    (sleep 3 && start "http://localhost:3000") &
+  elif command -v xdg-open &> /dev/null; then
+    (sleep 3 && xdg-open "http://localhost:3000") &
+  fi
+  npm run dev
 fi
-
-npm run dev

@@ -21,7 +21,7 @@ create_macos_app() {
     cp "$INSTALL_DIR/assets/OdylicStudio.icns" "$APP_PATH/Contents/Resources/AppIcon.icns"
   fi
 
-  # Info.plist
+  # Info.plist — LSUIElement hides the dock icon for the helper process
   cat > "$APP_PATH/Contents/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -49,58 +49,84 @@ create_macos_app() {
 </plist>
 PLIST
 
-  # Launcher script
+  # Launcher script — starts server silently, opens chromeless browser window
   cat > "$APP_PATH/Contents/MacOS/launch" << LAUNCHER
 #!/bin/bash
 INSTALL_DIR="$INSTALL_DIR"
+PORT=3000
+URL="http://localhost:\$PORT"
+LOG_FILE="\$INSTALL_DIR/.server.log"
+PID_FILE="\$INSTALL_DIR/.server.pid"
 
-# Function to kill server on exit
-cleanup() {
-  [ -n "\$SERVER_PID" ] && kill "\$SERVER_PID" 2>/dev/null
-}
-trap cleanup EXIT
-
-cd "\$INSTALL_DIR"
+# Kill old server if pid file exists
+if [ -f "\$PID_FILE" ]; then
+  OLD_PID=\$(cat "\$PID_FILE")
+  kill "\$OLD_PID" 2>/dev/null
+  rm -f "\$PID_FILE"
+fi
 
 # Check if already running
-if curl -s http://localhost:3000 > /dev/null 2>&1; then
-  open "http://localhost:3000"
+if curl -s "\$URL" > /dev/null 2>&1; then
+  # Server already running — just open the window
+  open_browser
   exit 0
 fi
 
-# Start server in background
-npm run dev -- --host 2>/dev/null &
+# Start server silently in background (no terminal window)
+cd "\$INSTALL_DIR"
+nohup npm run dev > "\$LOG_FILE" 2>&1 &
 SERVER_PID=\$!
+echo "\$SERVER_PID" > "\$PID_FILE"
 
-# Wait for server to be ready
+# Wait for server to be ready (up to 30s)
 for i in {1..30}; do
-  if curl -s http://localhost:3000 > /dev/null 2>&1; then
-    open "http://localhost:3000"
+  if curl -s "\$URL" > /dev/null 2>&1; then
     break
   fi
   sleep 1
 done
 
-# Keep running until server dies
-wait \$SERVER_PID
+# Open as a chromeless app window (no URL bar, no tabs)
+# Try Chrome first, then Edge, then fallback to default browser
+if [ -d "/Applications/Google Chrome.app" ]; then
+  open -a "Google Chrome" --args --app="\$URL" --new-window
+elif [ -d "/Applications/Microsoft Edge.app" ]; then
+  open -a "Microsoft Edge" --args --app="\$URL" --new-window
+elif [ -d "/Applications/Brave Browser.app" ]; then
+  open -a "Brave Browser" --args --app="\$URL" --new-window
+elif [ -d "/Applications/Chromium.app" ]; then
+  open -a "Chromium" --args --app="\$URL" --new-window
+else
+  # Safari doesn't support --app mode, fall back to regular browser
+  open "\$URL"
+fi
 LAUNCHER
 
   chmod +x "$APP_PATH/Contents/MacOS/launch"
 
   echo "  ✓ App created at: ~/Desktop/Odylic Studio.app"
+  echo "    Double-click it anytime to launch — no terminal needed"
 }
 
 create_windows_shortcut() {
-  # Create a .bat launcher and VBS to create desktop shortcut
-  SHORTCUT_VBS="$INSTALL_DIR/create-shortcut.vbs"
+  # Create a start.bat that runs silently
+  cat > "$INSTALL_DIR/start.bat" << 'BAT'
+@echo off
+cd /d "%~dp0"
+start /b npm run dev > .server.log 2>&1
+timeout /t 3 /nobreak > nul
+start "" "http://localhost:3000"
+BAT
 
+  # Create VBS to make a desktop shortcut
+  SHORTCUT_VBS="$INSTALL_DIR/create-shortcut.vbs"
   cat > "$SHORTCUT_VBS" << VBS
 Set WshShell = CreateObject("WScript.Shell")
 Set lnk = WshShell.CreateShortcut(WshShell.SpecialFolders("Desktop") & "\Odylic Studio.lnk")
 lnk.TargetPath = "$INSTALL_DIR\start.bat"
 lnk.WorkingDirectory = "$INSTALL_DIR"
 lnk.Description = "Odylic Studio - AI Ad Creative Tool"
-lnk.IconLocation = "$INSTALL_DIR\assets\odylic-icon.ico,0"
+lnk.WindowStyle = 7
 lnk.Save
 VBS
 
@@ -118,7 +144,7 @@ create_linux_desktop() {
 Type=Application
 Name=Odylic Studio
 Comment=AI Ad Creative Tool
-Exec=bash -c 'cd $INSTALL_DIR && npm run dev'
+Exec=bash -c 'cd $INSTALL_DIR && npm run dev & sleep 3 && xdg-open http://localhost:3000'
 Icon=$INSTALL_DIR/assets/odylic-icon.png
 Terminal=false
 Categories=Graphics;Development;
