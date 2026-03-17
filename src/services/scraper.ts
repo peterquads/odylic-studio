@@ -468,21 +468,7 @@ async function fetchRawHtml(url: string): Promise<string> {
     }
   } catch { /* CORS blocked */ }
 
-  // Attempt 3: Google Cache (site blocked us, but Google already saved the page)
-  try {
-    const cacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(url)}`
-    const cacheProxyUrl = `/api/proxy-image?url=${encodeURIComponent(cacheUrl)}`
-    const cacheResp = await fetch(cacheProxyUrl)
-    if (cacheResp.ok) {
-      const text = await cacheResp.text()
-      if (text.length > 500 && text.includes('<')) {
-        console.log(`Got HTML from Google Cache for ${url} (${text.length} chars)`)
-        return text
-      }
-    }
-  } catch { /* cache unavailable */ }
-
-  // Attempt 4: Jina Reader with HTML return format (preserves CSS/structured data)
+  // Attempt 3: Jina Reader with HTML return format (preserves CSS/structured data)
   try {
     const response = await fetch(JINA_READER_URL + url, {
       headers: { Accept: 'text/html', 'X-Return-Format': 'html' },
@@ -503,8 +489,23 @@ async function fetchShopifyProductJson(url: string): Promise<{ images: string[];
 
   function parseShopifyJson(data: any): { images: string[]; title: string } | null {
     if (data.product?.images?.length) {
+      // Deduplicate variant images by base filename and request 1200px width
+      const seen = new Set<string>()
+      const images: string[] = []
+      for (const img of data.product.images) {
+        const src: string = img.src || ''
+        if (!src) continue
+        // Normalize: strip size suffix and query params to detect duplicates
+        const base = src.replace(/(_\d+x\d+|_\d+x)?\.(jpg|jpeg|png|webp|gif)/i, '.$2').split('?')[0]
+        if (seen.has(base)) continue
+        seen.add(base)
+        // Request reasonable size (Shopify supports width param)
+        const sized = src.includes('?') ? src + '&width=1200' : src + '?width=1200'
+        images.push(sized)
+      }
+      console.log(`Shopify JSON: ${data.product.images.length} total → ${images.length} unique images`)
       return {
-        images: data.product.images.map((img: any) => img.src),
+        images,
         title: data.product.title || '',
       }
     }
@@ -575,7 +576,8 @@ function deduplicateImages(urls: string[]): string[] {
         }
       }
     } catch {
-      // Non-URL, skip
+      // Non-URL (e.g. svg-inline:..., data:...) — include as-is, no dedup needed
+      byBase.set(url, { url, width: 0 })
     }
   }
 
@@ -1305,10 +1307,7 @@ export async function scrapeProductUrl(url: string): Promise<{
     }
   }
 
-  // === SOURCE 10: Clearbit Logo API (domain-based, curated brand logos) ===
-  addLogoCandidate(`https://logo.clearbit.com/${pageDomain}`, 55)
-
-  // === SOURCE 11: Google favicon (guaranteed, low quality fallback) ===
+  // === SOURCE 10: Google favicon (guaranteed, low quality fallback) ===
   addLogoCandidate(`https://www.google.com/s2/favicons?domain=${pageDomain}&sz=128`, 5)
 
   // Sort by score descending, deduplicate by base path
@@ -1640,10 +1639,7 @@ export async function searchLogosWithBrandName(
     addCandidate(origin + p, score)
   }
 
-  // --- SOURCE D: Clearbit Logo API (domain-based, high reliability) ---
-  addCandidate(`https://logo.clearbit.com/${pageDomain}`, 55)
-
-  // --- SOURCE E: Google favicon (low-res fallback) ---
+  // --- SOURCE D: Google favicon (low-res fallback) ---
   addCandidate(`https://www.google.com/s2/favicons?domain=${pageDomain}&sz=128`, 5)
 
   // Sort by score, deduplicate by path
@@ -2123,7 +2119,7 @@ export async function fetchImageAsBase64(imageUrl: string): Promise<string | nul
     })
   }
 
-  // Helper: if result is an SVG data URI, rasterize it to PNG
+  // Helper: convert non-standard formats (SVG, AVIF, HEIC, WebP) to JPEG/PNG via canvas
   async function ensureRasterized(result: string | null, label: string): Promise<string | null> {
     if (!result) return null
     if (result.startsWith('data:image/svg+xml')) {
@@ -2132,6 +2128,27 @@ export async function fetchImageAsBase64(imageUrl: string): Promise<string | nul
       if (rasterized) { console.log(`${label}: SVG rasterized OK`); return rasterized }
       console.log(`${label}: SVG rasterization failed`)
       return null
+    }
+    // Convert AVIF, HEIC, and other exotic formats to JPEG
+    const mime = result.split(';')[0]?.split(':')[1] || ''
+    if (mime && !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mime)) {
+      console.log(`${label}: Converting ${mime} to JPEG...`)
+      try {
+        return await new Promise((resolve) => {
+          const img = new Image()
+          img.onload = () => {
+            const canvas = document.createElement('canvas')
+            canvas.width = img.naturalWidth
+            canvas.height = img.naturalHeight
+            const ctx = canvas.getContext('2d')!
+            ctx.drawImage(img, 0, 0)
+            resolve(canvas.toDataURL('image/jpeg', 0.9))
+          }
+          img.onerror = () => resolve(result) // Can't convert, return original
+          setTimeout(() => resolve(result), 5000)
+          img.src = result
+        })
+      } catch { return result }
     }
     return result
   }
@@ -2167,7 +2184,7 @@ export async function fetchImageAsBase64(imageUrl: string): Promise<string | nul
 
   // Method 3: CORS proxy via wsrv.nl
   try {
-    const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}&w=800&q=90`
+    const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}&w=800&q=90&output=jpg`
     const response = await fetch(proxyUrl, { mode: 'cors' })
     if (response.ok) {
       const blob = await response.blob()

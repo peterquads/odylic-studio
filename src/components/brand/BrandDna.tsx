@@ -475,59 +475,59 @@ export function BrandDnaPage() {
         }
       }
 
-      // Download product images — parallel with timeout, pre-classify from URL
-      const IMG_CONCURRENCY = 4
-      const IMG_TIMEOUT = 10000
-      const imgChunks: string[][] = []
-      for (let i = 0; i < imageUrls.length; i += IMG_CONCURRENCY) {
-        imgChunks.push(imageUrls.slice(i, i + IMG_CONCURRENCY))
-      }
+      // Download product images — all in parallel with timeout
+      const IMG_TIMEOUT = 15000
+      setStatus(`Downloading ${imageUrls.length} product images...`)
+      console.log(`[ASSETS] Starting download of ${imageUrls.length} product images`)
 
-      for (const chunk of imgChunks) {
-        const dlResults = await Promise.allSettled(
-          chunk.map(async (imgUrl) => {
-            const base64 = await Promise.race([
-              fetchImageAsBase64(imgUrl),
-              new Promise<null>((r) => setTimeout(() => r(null), IMG_TIMEOUT)),
-            ])
-            return base64 ? { imgUrl, base64 } : null
-          })
-        )
+      const dlResults = await Promise.allSettled(
+        imageUrls.map(async (imgUrl) => {
+          const base64 = await Promise.race([
+            fetchImageAsBase64(imgUrl),
+            new Promise<null>((r) => setTimeout(() => r(null), IMG_TIMEOUT)),
+          ])
+          if (!base64) console.warn(`[ASSETS] Failed to download: ${imgUrl.slice(0, 80)}`)
+          return base64 ? { imgUrl, base64 } : null
+        })
+      )
 
-        for (const r of dlResults) {
-          if (r.status !== 'fulfilled' || !r.value) continue
-          const { imgUrl, base64 } = r.value
-          downloaded++
-          setStatus(`Downloading assets (${downloaded}/${total})...`)
-          const name = imgUrl.split('/').pop()?.split('?')[0] || 'image.jpg'
-          const guessedType = guessAssetType(imgUrl, false)
+      let dlSuccess = 0
+      let dlFail = 0
+      for (const r of dlResults) {
+        if (r.status !== 'fulfilled' || !r.value) { dlFail++; continue }
+        const { imgUrl, base64 } = r.value
+        dlSuccess++
+        downloaded++
+        setStatus(`Downloading assets (${downloaded}/${total})...`)
+        const name = imgUrl.split('/').pop()?.split('?')[0] || 'image.jpg'
+        const guessedType = guessAssetType(imgUrl, false)
 
-          const asset: UploadedAsset = {
-            id: generateId(),
-            name,
-            mimeType: base64.split(';')[0].split(':')[1] || 'image/jpeg',
-            base64,
-            analysisStatus: guessedType ? 'complete' : 'pending',
-            source: 'scraped',
-            ...(guessedType ? {
-              analysis: {
-                assetType: guessedType as any,
-                description: `${guessedType.replace(/_/g, ' ')} - ${name}`,
-                style: guessedType === 'lifestyle' ? 'Lifestyle photography' : 'Product photography',
-                dominantColors: result.brandDna.colors,
-                products: [result.brandDna.name],
-                tags: [guessedType, result.brandDna.name.toLowerCase()],
-                suggestedUses: [`Use as ${guessedType.replace(/_/g, ' ')} in ad creatives`],
-              },
-            } : {}),
-          }
-          addAsset(asset)
+        const asset: UploadedAsset = {
+          id: generateId(),
+          name,
+          mimeType: base64.split(';')[0].split(':')[1] || 'image/jpeg',
+          base64,
+          analysisStatus: guessedType ? 'complete' : 'pending',
+          source: 'scraped',
+          ...(guessedType ? {
+            analysis: {
+              assetType: guessedType as any,
+              description: `${guessedType.replace(/_/g, ' ')} - ${name}`,
+              style: guessedType === 'lifestyle' ? 'Lifestyle photography' : 'Product photography',
+              dominantColors: result.brandDna.colors,
+              products: [result.brandDna.name],
+              tags: [guessedType, result.brandDna.name.toLowerCase()],
+              suggestedUses: [`Use as ${guessedType.replace(/_/g, ' ')} in ad creatives`],
+            },
+          } : {}),
+        }
+        addAsset(asset)
 
-          if (!guessedType) {
-            needsClassification.push(asset)
-          }
+        if (!guessedType) {
+          needsClassification.push(asset)
         }
       }
+      console.log(`[ASSETS] Download complete: ${dlSuccess} succeeded, ${dlFail} failed out of ${imageUrls.length}`)
 
       // Only classify assets we couldn't identify from URL (much fewer API calls)
       if (needsClassification.length > 0) {

@@ -3,11 +3,8 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import type { Plugin } from 'vite'
 import { createReadStream, statSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { join } from 'path'
 import { homedir } from 'os'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Server-side image proxy — bypasses all CORS restrictions
 function imageProxyPlugin(): Plugin {
@@ -23,10 +20,14 @@ function imageProxyPlugin(): Plugin {
         }
 
         try {
-          // Normalize URL — strip avif format for CDNs that reject it server-side (e.g. Contentful)
+          // Normalize URL — convert exotic formats to JPEG for broader compatibility
           let fetchUrl = url
           if (fetchUrl.includes('fm=avif')) {
             fetchUrl = fetchUrl.replace(/fm=avif/g, 'fm=jpg')
+          }
+          // Shopify CDN: strip format=pjpg&v= artifacts; ensure we get a standard format
+          if (fetchUrl.includes('cdn.shopify.com') && !fetchUrl.includes('format=')) {
+            fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + 'format=jpg'
           }
 
           const response = await fetch(fetchUrl, {
@@ -59,10 +60,10 @@ function imageProxyPlugin(): Plugin {
   }
 }
 
-// Serve template images from local templates/ directory first, then ~/.odylic-studio/templates/
+// Serve template images from external data directory (~/.odylic-studio/templates/)
+// This keeps the 2+ GB of template images out of the project directory
 function externalTemplatesPlugin(): Plugin {
-  const LOCAL_DIR = join(__dirname, 'templates')
-  const EXTERNAL_DIR = join(homedir(), '.odylic-studio', 'templates')
+  const TEMPLATES_DIR = join(homedir(), '.odylic-studio', 'templates')
   return {
     name: 'external-templates',
     configureServer(server) {
@@ -70,26 +71,22 @@ function externalTemplatesPlugin(): Plugin {
         const filename = decodeURIComponent((req.url || '').replace(/^\//, '').split('?')[0])
         if (!filename) return next()
 
-        // Try local bundled templates first, then external directory
-        const candidates = [join(LOCAL_DIR, filename), join(EXTERNAL_DIR, filename)]
-        for (const filePath of candidates) {
-          try {
-            const stat = statSync(filePath)
-            const ext = filename.split('.').pop()?.toLowerCase()
-            const mimeTypes: Record<string, string> = {
-              jpg: 'image/jpeg', jpeg: 'image/jpeg',
-              png: 'image/png', webp: 'image/webp',
-            }
-            res.setHeader('Content-Type', mimeTypes[ext || ''] || 'application/octet-stream')
-            res.setHeader('Content-Length', stat.size)
-            res.setHeader('Cache-Control', 'public, max-age=86400')
-            createReadStream(filePath).pipe(res)
-            return
-          } catch {
-            continue
+        const filePath = join(TEMPLATES_DIR, filename)
+        try {
+          const stat = statSync(filePath)
+          const ext = filename.split('.').pop()?.toLowerCase()
+          const mimeTypes: Record<string, string> = {
+            jpg: 'image/jpeg', jpeg: 'image/jpeg',
+            png: 'image/png', webp: 'image/webp',
           }
+          res.setHeader('Content-Type', mimeTypes[ext || ''] || 'application/octet-stream')
+          res.setHeader('Content-Length', stat.size)
+          res.setHeader('Cache-Control', 'public, max-age=86400')
+          createReadStream(filePath).pipe(res)
+        } catch {
+          // File not in external dir — fall through to public/ (backwards compatible)
+          next()
         }
-        next()
       })
     },
   }
