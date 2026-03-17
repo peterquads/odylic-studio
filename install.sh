@@ -111,18 +111,36 @@ echo ""
 echo "  Launching now..."
 echo ""
 
-# 7. Launch the app (starts server + opens chromeless window)
-if [ -d "$HOME/Desktop/Odylic Studio.app" ]; then
-  open "$HOME/Desktop/Odylic Studio.app"
-else
-  # Fallback: start server + open browser directly
-  cd "$INSTALL_DIR"
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    (sleep 3 && open "http://localhost:3000") &
-  elif command -v start &> /dev/null; then
-    (sleep 3 && start "http://localhost:3000") &
-  elif command -v xdg-open &> /dev/null; then
-    (sleep 3 && xdg-open "http://localhost:3000") &
-  fi
-  npm run dev
-fi
+# 7. Start server directly and open default browser
+cd "$INSTALL_DIR"
+
+# Kill anything already on port 3000
+lsof -ti:3000 2>/dev/null | xargs kill 2>/dev/null || true
+
+# Start dev server in background
+nohup npm run dev > "$INSTALL_DIR/.server.log" 2>&1 &
+echo $! > "$INSTALL_DIR/.server.pid"
+
+# Wait for server to be ready, then open default browser
+(
+  for i in $(seq 1 30); do
+    if curl -s "http://localhost:3000" > /dev/null 2>&1; then
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        open "http://localhost:3000"
+      elif command -v start &> /dev/null; then
+        start "http://localhost:3000"
+      elif command -v xdg-open &> /dev/null; then
+        xdg-open "http://localhost:3000"
+      fi
+      exit 0
+    fi
+    sleep 1
+  done
+  echo "  ⚠ Server didn't start in time. Run: cd ~/odylic-studio && npm start"
+) &
+
+echo "  Server starting on http://localhost:3000"
+echo "  Your browser will open automatically in a few seconds."
+echo ""
+echo "  To stop the server: kill \$(cat ~/odylic-studio/.server.pid)"
+echo ""
