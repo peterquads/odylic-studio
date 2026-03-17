@@ -52,6 +52,14 @@ PLIST
   # Launcher script — starts server silently, opens chromeless browser window
   cat > "$APP_PATH/Contents/MacOS/launch" << LAUNCHER
 #!/bin/bash
+
+# macOS .app bundles run in a bare shell — load user's PATH so node/npm are found
+export PATH="/usr/local/bin:/opt/homebrew/bin:\$HOME/.nvm/versions/node/\$(ls \$HOME/.nvm/versions/node/ 2>/dev/null | tail -1)/bin:/usr/bin:/bin:/usr/sbin:/sbin:\$PATH"
+# Source shell profile if it exists (picks up nvm, volta, fnm, etc.)
+[ -f "\$HOME/.zshrc" ] && source "\$HOME/.zshrc" 2>/dev/null
+[ -f "\$HOME/.bashrc" ] && source "\$HOME/.bashrc" 2>/dev/null
+[ -f "\$HOME/.bash_profile" ] && source "\$HOME/.bash_profile" 2>/dev/null
+
 INSTALL_DIR="$INSTALL_DIR"
 PORT=3000
 URL="http://localhost:\$PORT"
