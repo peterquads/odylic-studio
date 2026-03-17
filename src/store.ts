@@ -2,6 +2,11 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AppState, GeneratedAd } from './types'
 
+// Module-level abort controller for generation (not serializable, not in store)
+let generationAbort: AbortController | null = null
+export function getGenerationAbort() { return generationAbort }
+export function setGenerationAbort(ac: AbortController | null) { generationAbort = ac }
+
 export const useStore = create<AppState>()(
   persist(
     (set) => ({
@@ -74,8 +79,15 @@ export const useStore = create<AppState>()(
           results: s.results.map((r) => (r.id === id ? { ...r, ...updates } : r)),
         })),
       removeResults: (ids) =>
-        set((s) => ({ results: s.results.filter((r) => !ids.includes(r.id)) })),
+        set((s) => {
+          const idSet = new Set(ids)
+          return { results: s.results.filter((r) => !idSet.has(r.id)) }
+        }),
       clearResults: () => set({ results: [] }),
+
+      errors: [] as string[],
+      addError: (msg: string) => set((s) => ({ errors: [...s.errors.slice(-4), msg] })),
+      dismissError: (idx: number) => set((s) => ({ errors: s.errors.filter((_, i) => i !== idx) })),
 
       savedAdIds: new Set<string>(),
       toggleSavedAd: (id) => set((s) => {
