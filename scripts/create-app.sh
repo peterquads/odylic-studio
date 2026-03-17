@@ -49,65 +49,50 @@ create_macos_app() {
 </plist>
 PLIST
 
-  # Launcher script — starts server silently, opens chromeless browser window
-  cat > "$APP_PATH/Contents/MacOS/launch" << LAUNCHER
+  # Launcher script — starts server silently, opens default browser
+  cat > "$APP_PATH/Contents/MacOS/launch" << 'LAUNCHER'
 #!/bin/bash
 
-# macOS .app bundles run in a bare shell — load user's PATH so node/npm are found
-export PATH="/usr/local/bin:/opt/homebrew/bin:\$HOME/.nvm/versions/node/\$(ls \$HOME/.nvm/versions/node/ 2>/dev/null | tail -1)/bin:/usr/bin:/bin:/usr/sbin:/sbin:\$PATH"
-# Source shell profile if it exists (picks up nvm, volta, fnm, etc.)
-[ -f "\$HOME/.zshrc" ] && source "\$HOME/.zshrc" 2>/dev/null
-[ -f "\$HOME/.bashrc" ] && source "\$HOME/.bashrc" 2>/dev/null
-[ -f "\$HOME/.bash_profile" ] && source "\$HOME/.bash_profile" 2>/dev/null
+# macOS .app bundles run in a bare shell — need to find node/npm
+export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+[ -f "$HOME/.zprofile" ] && source "$HOME/.zprofile" 2>/dev/null
+[ -f "$HOME/.zshrc" ] && source "$HOME/.zshrc" 2>/dev/null
 
-INSTALL_DIR="$INSTALL_DIR"
+INSTALL_DIR="$HOME/odylic-studio"
 PORT=3000
-URL="http://localhost:\$PORT"
-LOG_FILE="\$INSTALL_DIR/.server.log"
-PID_FILE="\$INSTALL_DIR/.server.pid"
+URL="http://localhost:$PORT"
+LOG_FILE="$INSTALL_DIR/.server.log"
+PID_FILE="$INSTALL_DIR/.server.pid"
 
-# Kill old server if pid file exists
-if [ -f "\$PID_FILE" ]; then
-  OLD_PID=\$(cat "\$PID_FILE")
-  kill "\$OLD_PID" 2>/dev/null
-  rm -f "\$PID_FILE"
-fi
-
-# Check if already running
-if curl -s "\$URL" > /dev/null 2>&1; then
-  # Server already running — just open the window
-  open_browser
+# If server already running, just open browser and exit
+if curl -s "$URL" > /dev/null 2>&1; then
+  open "$URL"
   exit 0
 fi
 
-# Start server silently in background (no terminal window)
-cd "\$INSTALL_DIR"
-nohup npm run dev > "\$LOG_FILE" 2>&1 &
-SERVER_PID=\$!
-echo "\$SERVER_PID" > "\$PID_FILE"
-
-# Wait for server to be ready (up to 30s)
-for i in {1..30}; do
-  if curl -s "\$URL" > /dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
-
-# Open as a chromeless app window (no URL bar, no tabs)
-# Try Chrome first, then Edge, then fallback to default browser
-if [ -d "/Applications/Google Chrome.app" ]; then
-  open -a "Google Chrome" --args --app="\$URL" --new-window
-elif [ -d "/Applications/Microsoft Edge.app" ]; then
-  open -a "Microsoft Edge" --args --app="\$URL" --new-window
-elif [ -d "/Applications/Brave Browser.app" ]; then
-  open -a "Brave Browser" --args --app="\$URL" --new-window
-elif [ -d "/Applications/Chromium.app" ]; then
-  open -a "Chromium" --args --app="\$URL" --new-window
-else
-  # Safari doesn't support --app mode, fall back to regular browser
-  open "\$URL"
+# Kill stale server if pid file exists
+if [ -f "$PID_FILE" ]; then
+  kill "$(cat "$PID_FILE")" 2>/dev/null
+  rm -f "$PID_FILE"
 fi
+
+# Start server in background
+cd "$INSTALL_DIR"
+nohup npm run dev > "$LOG_FILE" 2>&1 &
+echo $! > "$PID_FILE"
+
+# Wait for server then open browser — in background so .app exits immediately
+(
+  for i in $(seq 1 30); do
+    if curl -s "$URL" > /dev/null 2>&1; then
+      open "$URL"
+      exit 0
+    fi
+    sleep 1
+  done
+) &
+
+exit 0
 LAUNCHER
 
   chmod +x "$APP_PATH/Contents/MacOS/launch"
@@ -117,13 +102,13 @@ LAUNCHER
 }
 
 create_windows_shortcut() {
-  # Create a start.bat that runs silently
+  # Create a start.bat launcher — runs server hidden, opens default browser
   cat > "$INSTALL_DIR/start.bat" << 'BAT'
 @echo off
 cd /d "%~dp0"
-start /b npm run dev > .server.log 2>&1
-timeout /t 3 /nobreak > nul
-start "" "http://localhost:3000"
+start /b /min cmd /c "npm run dev > .server.log 2>&1"
+timeout /t 4 /nobreak > nul
+start http://localhost:3000
 BAT
 
   # Create VBS to make a desktop shortcut
