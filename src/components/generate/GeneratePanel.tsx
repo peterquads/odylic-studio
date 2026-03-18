@@ -23,10 +23,10 @@ const ASPECT_RATIOS: { value: AspectRatio; label: string; icon: any; desc: strin
   { value: '9:16', label: 'Story', icon: Smartphone, desc: '9:16' },
 ]
 
-const QUALITY_TIERS: { value: ModelTier; label: string; desc: string; icon: any }[] = [
-  { value: 'standard', label: 'Standard', desc: 'Fast', icon: Zap },
-  { value: 'hd', label: 'HD', desc: 'Higher quality', icon: Sparkles },
-  { value: '2k', label: '2K', desc: 'High res', icon: Crown },
+const QUALITY_TIERS: { value: ModelTier; label: string; desc: string; tooltip: string; icon: any }[] = [
+  { value: 'standard', label: 'Standard', desc: 'Fast', tooltip: 'Gemini 3.1 Flash · 1K resolution · Fastest generation', icon: Zap },
+  { value: 'hd', label: 'HD', desc: 'Higher quality', tooltip: 'Gemini 3.1 Flash → Gemini 3 Pro fallback · 1K resolution', icon: Sparkles },
+  { value: '2k', label: '2K', desc: 'High res', tooltip: 'Gemini 3 Pro · 2K resolution · Requires paid API tier', icon: Crown },
 ]
 
 export function GeneratePanelPage() {
@@ -649,9 +649,10 @@ export function GeneratePanelPage() {
       <GlassCard>
         <p className="text-xs text-text-muted uppercase tracking-wider mb-3">Quality</p>
         <div className="flex gap-2">
-          {QUALITY_TIERS.map(({ value, label, desc, icon: Icon }) => (
+          {QUALITY_TIERS.map(({ value, label, desc, tooltip, icon: Icon }) => (
             <button
               key={value}
+              title={tooltip}
               onClick={() => setGenerationConfig({ modelTier: value })}
               className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all border ${
                 generationConfig.modelTier === value
