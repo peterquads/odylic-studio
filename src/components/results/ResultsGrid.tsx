@@ -39,7 +39,7 @@ export function ResultsGridPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [editingResult, setEditingResult] = useState<string | null>(null)
   const [showModelReport, setShowModelReport] = useState(false)
-  const [resizingAd, setResizingAd] = useState(false)
+  const [resizingSize, setResizingSize] = useState<string | null>(null)
 
   // Hover zoom with delay
   const [hoveredImage, setHoveredImage] = useState<{ url: string; x: number; y: number } | null>(null)
@@ -474,61 +474,127 @@ export function ResultsGridPage() {
                   )}
 
                   {missingSizes.length > 0 && detail.imageUrl && detail.prompt && (
-                    <button
-                      onClick={async () => {
-                        if (resizingAd) return
-                        setResizingAd(true)
-                        const cid = detail.conceptId || generateId()
-                        // Tag original ad with conceptId if it doesn't have one
-                        if (!detail.conceptId) {
-                          useStore.getState().updateResult(detail.id, { conceptId: cid })
-                        }
-
-                        for (let i = 0; i < missingSizes.length; i++) {
-                          const size = missingSizes[i]
-                          setGenerationProgress({ current: i, total: missingSizes.length, stage: `Resizing to ${size}...` })
-                          console.log(`[RESULTS] Resize button: ${detail.aspectRatio} → ${size} (sending only master ad image)`)
-                          try {
-                            const imageUrl = await resizeImage(
-                              geminiApiKey, detail.imageUrl, detail.aspectRatio,
-                              size, generationConfig.modelTier,
-                            )
-                            addResult({
-                              id: generateId(),
-                              imageUrl,
-                              templateFilename: detail.templateFilename,
-                              templateImageUrl: detail.templateImageUrl,
-                              assetsUsed: detail.assetsUsed,
-                              aspectRatio: size,
-                              prompt: detail.prompt,
-                              qa: null,
-                              qaStatus: 'skipped',
-                              retryCount: 0,
-                              timestamp: Date.now(),
-                              version: 1,
-                              conceptId: cid,
-                              formatType: detail.formatType,
-                              strategyAngle: detail.strategyAngle,
-                              strategyConcept: detail.strategyConcept,
-                              adName: detail.adName,
-                            })
-                          } catch (e) {
-                            console.error(`Resize to ${size} failed:`, e)
-                          }
-                        }
-                        setGenerationProgress({ current: missingSizes.length, total: missingSizes.length, stage: 'Done!' })
-                        setTimeout(() => setGenerationProgress({ current: 0, total: 0, stage: '' }), 3000)
-                        setResizingAd(false)
-                      }}
-                      disabled={resizingAd}
-                      className="w-full mb-4 py-2.5 rounded-full text-xs font-medium bg-black/[0.04] text-text-secondary hover:bg-black/[0.08] transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-                    >
-                      {resizingAd ? (
-                        <><Loader2 size={12} className="animate-spin" /> Generating...</>
-                      ) : (
-                        <>Generate {missingSizes.join(', ')}</>
-                      )}
-                    </button>
+                    <div className="mb-4">
+                      <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5">Generate size</p>
+                      <div className="flex gap-1.5">
+                        {missingSizes.map(size => (
+                          <button
+                            key={size}
+                            onClick={async () => {
+                              if (resizingSize) return
+                              setResizingSize(size)
+                              const cid = detail.conceptId || generateId()
+                              if (!detail.conceptId) {
+                                useStore.getState().updateResult(detail.id, { conceptId: cid })
+                              }
+                              setGenerationProgress({ current: 0, total: 1, stage: `Resizing to ${size}...` })
+                              console.log(`[RESULTS] Resize: ${detail.aspectRatio} → ${size}`)
+                              try {
+                                const imageUrl = await resizeImage(
+                                  geminiApiKey, detail.imageUrl, detail.aspectRatio,
+                                  size, generationConfig.modelTier,
+                                )
+                                addResult({
+                                  id: generateId(),
+                                  imageUrl,
+                                  templateFilename: detail.templateFilename,
+                                  templateImageUrl: detail.templateImageUrl,
+                                  assetsUsed: detail.assetsUsed,
+                                  aspectRatio: size,
+                                  prompt: detail.prompt,
+                                  qa: null,
+                                  qaStatus: 'skipped',
+                                  retryCount: 0,
+                                  timestamp: Date.now(),
+                                  version: 1,
+                                  conceptId: cid,
+                                  formatType: detail.formatType,
+                                  strategyAngle: detail.strategyAngle,
+                                  strategyConcept: detail.strategyConcept,
+                                  adName: detail.adName,
+                                })
+                                setGenerationProgress({ current: 1, total: 1, stage: 'Done!' })
+                              } catch (e) {
+                                console.error(`Resize to ${size} failed:`, e)
+                              }
+                              setTimeout(() => setGenerationProgress({ current: 0, total: 0, stage: '' }), 3000)
+                              setResizingSize(null)
+                            }}
+                            disabled={!!resizingSize}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all flex items-center gap-1.5 ${
+                              resizingSize === size
+                                ? 'bg-black/[0.08] text-text-primary'
+                                : 'bg-black/[0.04] text-text-secondary hover:bg-black/[0.08]'
+                            } disabled:opacity-50`}
+                          >
+                            {resizingSize === size ? (
+                              <><Loader2 size={10} className="animate-spin" /> {size}</>
+                            ) : (
+                              size
+                            )}
+                          </button>
+                        ))}
+                        {missingSizes.length > 1 && (
+                          <button
+                            onClick={async () => {
+                              if (resizingSize) return
+                              setResizingSize('all')
+                              const cid = detail.conceptId || generateId()
+                              if (!detail.conceptId) {
+                                useStore.getState().updateResult(detail.id, { conceptId: cid })
+                              }
+                              for (let i = 0; i < missingSizes.length; i++) {
+                                const size = missingSizes[i]
+                                setGenerationProgress({ current: i, total: missingSizes.length, stage: `Resizing to ${size}...` })
+                                console.log(`[RESULTS] Resize: ${detail.aspectRatio} → ${size}`)
+                                try {
+                                  const imageUrl = await resizeImage(
+                                    geminiApiKey, detail.imageUrl, detail.aspectRatio,
+                                    size, generationConfig.modelTier,
+                                  )
+                                  addResult({
+                                    id: generateId(),
+                                    imageUrl,
+                                    templateFilename: detail.templateFilename,
+                                    templateImageUrl: detail.templateImageUrl,
+                                    assetsUsed: detail.assetsUsed,
+                                    aspectRatio: size,
+                                    prompt: detail.prompt,
+                                    qa: null,
+                                    qaStatus: 'skipped',
+                                    retryCount: 0,
+                                    timestamp: Date.now(),
+                                    version: 1,
+                                    conceptId: cid,
+                                    formatType: detail.formatType,
+                                    strategyAngle: detail.strategyAngle,
+                                    strategyConcept: detail.strategyConcept,
+                                    adName: detail.adName,
+                                  })
+                                } catch (e) {
+                                  console.error(`Resize to ${size} failed:`, e)
+                                }
+                              }
+                              setGenerationProgress({ current: missingSizes.length, total: missingSizes.length, stage: 'Done!' })
+                              setTimeout(() => setGenerationProgress({ current: 0, total: 0, stage: '' }), 3000)
+                              setResizingSize(null)
+                            }}
+                            disabled={!!resizingSize}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all flex items-center gap-1.5 ${
+                              resizingSize === 'all'
+                                ? 'bg-black/[0.08] text-text-primary'
+                                : 'bg-black/[0.04] text-text-secondary hover:bg-black/[0.08]'
+                            } disabled:opacity-50`}
+                          >
+                            {resizingSize === 'all' ? (
+                              <><Loader2 size={10} className="animate-spin" /> All</>
+                            ) : (
+                              'All'
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
 
                   {missingSizes.length === 0 && detail.conceptId && (
