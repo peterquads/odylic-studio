@@ -160,13 +160,41 @@ Write-Host ""
 
 # ── 6. Create start.bat launcher ─────────────────────────────
 
+# Find npm.cmd path (more reliable than bare "npm" on Windows)
+$npmCmd = (Get-Command npm -ErrorAction SilentlyContinue).Source
+if ($npmCmd -and $npmCmd.EndsWith(".ps1")) {
+    # npm.ps1 wrapper — use npm.cmd instead for bat/cmd contexts
+    $npmCmd = $npmCmd -replace "\.ps1$", ".cmd"
+}
+if (-not $npmCmd) { $npmCmd = "npm" }
+
 $startBat = Join-Path $INSTALL_DIR "start.bat"
 @"
 @echo off
 cd /d "%~dp0"
-start /b /min cmd /c "npm run dev > .server.log 2>&1"
-timeout /t 4 /nobreak > nul
-start http://localhost:3000
+
+REM Check if server is already running
+powershell -Command "try { Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
+if %errorlevel%==0 (
+    start http://localhost:3000
+    exit /b
+)
+
+REM Start server in a hidden window
+start /min "" cmd /c "$npmCmd run dev > .server.log 2>&1"
+
+REM Wait for server then open browser
+echo Starting Odylic Studio...
+for /L %%i in (1,1,60) do (
+    powershell -Command "try { Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
+    if !errorlevel!==0 (
+        start http://localhost:3000
+        exit /b
+    )
+    timeout /t 1 /nobreak >nul
+)
+echo Could not start server. Run: cd %~dp0 ^&^& npm run dev
+pause
 "@ | Set-Content -Path $startBat -Encoding ASCII
 
 # ── 7. Create desktop shortcut ────────────────────────────────
@@ -191,7 +219,15 @@ try {
 
     Write-Host "  * Desktop shortcut created: Odylic Studio" -ForegroundColor Green
 } catch {
-    Write-Host "  Warning: Could not create desktop shortcut." -ForegroundColor Yellow
+    Write-Host "  Warning: Could not create desktop shortcut: $_" -ForegroundColor Yellow
+    Write-Host "  You can launch manually: cd ~/odylic-studio && npm run dev" -ForegroundColor Yellow
+}
+
+# Also copy start.bat to Desktop as a fallback if shortcut failed
+$desktopBat = Join-Path ([System.Environment]::GetFolderPath("Desktop")) "Odylic Studio.bat"
+if (-not (Test-Path (Join-Path ([System.Environment]::GetFolderPath("Desktop")) "Odylic Studio.lnk"))) {
+    Copy-Item $startBat $desktopBat -Force
+    Write-Host "  * Copied start.bat to Desktop as fallback" -ForegroundColor Green
 }
 
 Write-Host ""
@@ -216,15 +252,17 @@ if ($portProcess) {
     $portProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
 }
 
-# Start dev server in background
-Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run dev > .server.log 2>&1" -WindowStyle Hidden
+# Start dev server in background using cmd (avoids ps1 execution issues)
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$npmCmd`" run dev > .server.log 2>&1" -WindowStyle Hidden
 
-# Wait for server then open browser
+# Wait for server then open browser — 60s timeout (first Vite run is slow)
+Write-Host "  Waiting for server to start (first run may take a minute)..."
 $attempts = 0
-while ($attempts -lt 30) {
+while ($attempts -lt 60) {
     try {
-        $response = Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop
+        Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop | Out-Null
         Start-Process "http://localhost:3000"
+        Write-Host "  * Browser opened" -ForegroundColor Green
         break
     } catch {
         Start-Sleep -Seconds 1
@@ -232,12 +270,13 @@ while ($attempts -lt 30) {
     }
 }
 
-if ($attempts -ge 30) {
-    Write-Host "  Warning: Server didn't start in time. Run: cd ~/odylic-studio; npm run dev" -ForegroundColor Yellow
+if ($attempts -ge 60) {
+    Write-Host "  Server is still starting. Opening browser anyway..." -ForegroundColor Yellow
+    Start-Process "http://localhost:3000"
 }
 
 Pop-Location
 
-Write-Host "  Server starting on http://localhost:3000"
-Write-Host "  Your browser will open automatically in a few seconds."
+Write-Host ""
+Write-Host "  Server running on http://localhost:3000"
 Write-Host ""
