@@ -1921,14 +1921,8 @@ async function searchGuarantee(brandName: string): Promise<string> {
   return jinaSearch(`${brandName} guarantee warranty return policy`, 3)
 }
 
-// Opus → Sonnet → Haiku cascade for brand research (most important analysis in the app)
-const OPUS_CANDIDATES = [
-  'claude-opus-4-6',
-  'claude-opus-4-5',
-  'claude-opus-4-1-20250805',
-  'claude-opus-4-20250514',
-]
-const SONNET_CANDIDATES = [
+// Sonnet → Haiku cascade for brand research (Opus reserved for briefing in claude.ts)
+const RESEARCH_CANDIDATES = [
   'claude-sonnet-4-6',
   'claude-sonnet-4-5',
   'claude-sonnet-4-20250514',
@@ -2015,9 +2009,8 @@ async function callBestAvailableModel(
     return callWithRetry(apiKey, resolvedResearchModel, messages, maxTokens)
   }
 
-  const allCandidates = [...OPUS_CANDIDATES, ...SONNET_CANDIDATES]
   let lastError: any
-  for (const candidate of allCandidates) {
+  for (const candidate of RESEARCH_CANDIDATES) {
     try {
       const result = await callWithRetry(apiKey, candidate, messages, maxTokens)
       resolvedResearchModel = candidate
@@ -2034,8 +2027,8 @@ async function callBestAvailableModel(
     }
   }
 
-  // Don't cache Haiku — retry higher models next time
-  console.log('No Opus/Sonnet available, using Haiku for this call')
+  // Don't cache Haiku — retry Sonnet next time
+  console.log('No Sonnet available, using Haiku for this call')
   return callWithRetry(apiKey, HAIKU, messages, maxTokens)
 }
 
