@@ -24,7 +24,7 @@ const NAV_ITEMS: { step: AppStep; icon: ReactNode; label: string }[] = [
 ]
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { step, setStep, brandDna, savedAdIds, updateAvailable } = useStore()
+  const { step, setStep, brandDna, savedAdIds } = useStore()
   const [showProfiles, setShowProfiles] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const savedCount = savedAdIds.size
@@ -39,20 +39,6 @@ export function Shell({ children }: { children: ReactNode }) {
           </a>
           <span className="text-[9px] tracking-[0.25em] uppercase text-text-muted leading-none">Studio</span>
         </div>
-
-        {updateAvailable && (
-          <button
-            onClick={() => {
-              fetch('/api/shutdown').catch(() => {})
-              document.title = 'Updating Odylic Studio...'
-              document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:serif;color:#444;flex-direction:column;gap:8px"><p>Updating Odylic Studio...</p><p style="font-size:13px;color:#888">Re-open the desktop shortcut when the window closes.</p></div>'
-            }}
-            className="mx-2 mt-2 flex items-center gap-2 px-3 py-2 rounded-xl text-xs bg-orange-50 border border-orange-200 text-orange-700 hover:bg-orange-100 transition-all"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />
-            Update available — click to restart
-          </button>
-        )}
 
         <div className="flex-1 py-3 px-2 space-y-0.5">
           {NAV_ITEMS.map((item) => {

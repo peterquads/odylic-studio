@@ -76,14 +76,8 @@ if [ -f "$PID_FILE" ]; then
   rm -f "$PID_FILE"
 fi
 
-# Pull latest code and rebuild if there are updates
-cd "$INSTALL_DIR"
-if git pull --ff-only 2>/dev/null | grep -v "Already up to date" | grep -q .; then
-  npm install --loglevel=error > /dev/null 2>&1
-  npm run build --loglevel=error > /dev/null 2>&1
-fi
-
 # Start server in background
+cd "$INSTALL_DIR"
 nohup npm start > "$LOG_FILE" 2>&1 &
 echo $! > "$PID_FILE"
 

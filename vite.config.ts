@@ -6,11 +6,6 @@ import { createReadStream, statSync } from 'fs'
 import { join, resolve } from 'path'
 import { homedir } from 'os'
 
-// Inject git commit SHA at build time for update checking
-const commitSha = (() => {
-  try { return require('child_process').execSync('git rev-parse HEAD').toString().trim() }
-  catch { return 'unknown' }
-})()
 
 // Block private/internal IPs to prevent SSRF attacks
 function isPrivateUrl(urlStr: string): boolean {
@@ -173,9 +168,6 @@ function shutdownPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), imageProxyPlugin(), externalTemplatesPlugin(), shutdownPlugin()],
-  define: {
-    __APP_VERSION__: JSON.stringify(commitSha),
-  },
   server: { port: 3000 },
   preview: { port: 3000 },
   publicDir: 'public',
