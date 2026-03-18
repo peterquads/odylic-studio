@@ -9,6 +9,13 @@ const MODEL_NANO_BANANA_2 = 'gemini-3.1-flash-image-preview'
 const MODEL_IMAGE_PRO = 'gemini-3-pro-image-preview'
 const MODEL_IMAGE_FAST = 'gemini-2.5-flash-image'
 
+const MODEL_FRIENDLY_NAMES: Record<string, string> = {
+  [MODEL_NANO_BANANA_2]: 'Nano Banana 2',
+  [MODEL_IMAGE_PRO]: 'Nano Banana Pro',
+  [MODEL_IMAGE_FAST]: 'Nano Banana',
+}
+function friendlyModel(id: string) { return MODEL_FRIENDLY_NAMES[id] || id }
+
 // Wrap a promise with a timeout
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -62,7 +69,7 @@ export async function generateImage(
   aspectRatio: AspectRatio,
   modelTier: ModelTier,
   templateImage?: { base64: string; mimeType: string } | null
-): Promise<string> {
+): Promise<{ imageUrl: string; modelUsed: string }> {
   const ai = new GoogleGenAI({ apiKey })
 
   // 2K needs Pro model (Flash doesn't support imageSize reliably)
@@ -121,7 +128,7 @@ export async function generateImage(
         console.log(`Used fallback model: ${currentModel}`)
       }
       notifyModelUsed('Gemini (image gen)', currentModel)
-      return extractImage(response)
+      return { imageUrl: extractImage(response), modelUsed: friendlyModel(currentModel) }
     } catch (error: any) {
       console.warn(`Model ${currentModel} failed:`, error?.message?.slice(0, 200), error?.status || '')
       lastError = error

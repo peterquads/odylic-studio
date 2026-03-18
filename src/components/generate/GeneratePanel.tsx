@@ -207,11 +207,13 @@ export function GeneratePanelPage() {
 
         try {
           setGenerationProgress({ current: globalIdx, total: totalQuantity, stage: `Generating image ${adNum}${sizeLabel}...` })
-          let imageUrl = await generateImage(
+          let genResult = await generateImage(
             geminiApiKey, prompt, assetImages,
             currentRatio, generationConfig.modelTier,
             templateImg
           )
+          let imageUrl = genResult.imageUrl
+          let modelUsed = genResult.modelUsed
 
           setGenerationProgress({ current: globalIdx, total: totalQuantity, stage: `QA review ${adNum}${sizeLabel}...` })
           const mimeType = detectMediaType(imageUrl)
@@ -225,11 +227,13 @@ export function GeneratePanelPage() {
             retryCount++
             setGenerationProgress({ current: globalIdx, total: totalQuantity, stage: `Iterating ${adNum}${sizeLabel}...` })
             const fixedPrompt = `${prompt}\n\nIMPORTANT FIXES NEEDED: ${qa.feedbackForRegeneration}\nMake sure to use the attached product photos prominently and follow the template layout from Image 1. ALL TEXT MUST BE SPELLED CORRECTLY. Products and people must be FULLY within the frame, not cropped off edges. Text blocks must NOT overlap/cover the product photo.`
-            imageUrl = await generateImage(
+            const retryResult = await generateImage(
               geminiApiKey, fixedPrompt, assetImages,
               currentRatio, generationConfig.modelTier,
               templateImg
             )
+            imageUrl = retryResult.imageUrl
+            modelUsed = retryResult.modelUsed
             qa = await qaCheckImage(
               claudeApiKey, imageUrl, mimeType, prompt, enrichedBrandDna,
               template.description
@@ -282,6 +286,7 @@ export function GeneratePanelPage() {
             strategyAngle,
             strategyConcept,
             adName: `${template.format_type}-${strategyAngle || 'ad'}`,
+            modelUsed,
           })
         } catch (e: any) {
           console.error('Generation failed:', e)

@@ -301,6 +301,8 @@ export interface GeneratedAd {
   strategyAngle?: string
   strategyConcept?: string
   formatType?: string
+  // Model info
+  modelUsed?: string
 }
 
 // ============ Advanced ============

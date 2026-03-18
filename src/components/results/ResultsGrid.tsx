@@ -385,6 +385,7 @@ export function ResultsGridPage() {
                 {(detail.version || 1) > 1 && <GlassBadge>v{detail.version}</GlassBadge>}
                 {detail.retryCount > 0 && <GlassBadge color="warning">{detail.retryCount} retries</GlassBadge>}
                 {detail.strategyAngle && <GlassBadge>{detail.strategyAngle}</GlassBadge>}
+                {detail.modelUsed && <GlassBadge>{detail.modelUsed}</GlassBadge>}
               </div>
               <button onClick={() => setSelectedResult(null)} className="p-1 rounded-lg hover:bg-black/[0.04]">
                 <X size={16} />
