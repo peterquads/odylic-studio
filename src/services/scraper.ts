@@ -1942,7 +1942,7 @@ async function callWithRetry(
   messages: any[],
   maxTokens: number
 ): Promise<string> {
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 90000)
     let response: Response
@@ -1985,7 +1985,7 @@ async function callWithRetry(
       throw new Error(`Claude API auth error (${response.status}): Check your API key`)
     }
 
-    if ((response.status === 429 || response.status === 529) && attempt < 2) {
+    if ((response.status === 429 || response.status === 529) && attempt < 1) {
       const delay = response.status === 529 ? (attempt + 1) * 15000 : (attempt + 1) * 20000
       console.log(`${response.status === 529 ? 'Overloaded' : 'Rate limited'} (${model}), waiting ${delay / 1000}s...`)
       await new Promise((r) => setTimeout(r, delay))
@@ -2016,6 +2016,7 @@ async function callBestAvailableModel(
   }
 
   const allCandidates = [...OPUS_CANDIDATES, ...SONNET_CANDIDATES]
+  let lastError: any
   for (const candidate of allCandidates) {
     try {
       const result = await callWithRetry(apiKey, candidate, messages, maxTokens)
@@ -2023,15 +2024,13 @@ async function callBestAvailableModel(
       console.log(`Brand research using model: ${candidate}`)
       return result
     } catch (e: any) {
-      if (e.message?.startsWith('model_not_found')) {
-        console.log(`Model ${candidate} not available, trying next...`)
-        continue
-      }
-      if (e.message?.startsWith('timeout:')) {
-        console.log(`Model ${candidate} timed out, trying faster model...`)
-        continue
-      }
-      throw e
+      lastError = e
+      const msg = e.message || ''
+      // Auth errors are fatal — don't cascade, user's key is bad
+      if (msg.includes('auth') || msg.includes('401') || msg.includes('403')) throw e
+      // Everything else (not found, timeout, rate limit, overload) — try next model
+      console.log(`Model ${candidate} failed (${msg.slice(0, 80)}), trying next...`)
+      continue
     }
   }
 
