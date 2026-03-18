@@ -14,19 +14,20 @@ AI-powered ad creative generation. Enter a product URL, and the system researche
 >
 > | Action | Estimated Cost |
 > |--------|---------------|
-> | Brand research (Claude) | ~$0.05–0.15 |
+> | Brand research (Claude) | ~$0.05–0.15 per research |
 > | Ad generation — Fast tier (Gemini) | ~$0.01–0.03 per image |
 > | Ad generation — Quality tier (Gemini) | ~$0.02–0.05 per image |
 > | Ad generation — Pro tier (Gemini) | ~$0.05–0.10 per image |
-> | Resizing an ad | ~$0.02–0.05 per resize |
+> | Resizing an ad to a new size | ~$0.02–0.05 per resize |
+> | Asset analysis (Claude) | ~$0.01–0.03 per image |
 >
-> A typical session generating 10–20 ads with resizes might cost **$0.50–$2.00.** Heavy usage (50+ ads, multiple brands) could be **$5–10+ per session.**
+> A typical session generating 10–20 ads with resizes might cost **$0.50–$2.00.** Heavy usage (50+ ads, multiple brands) could be **$5–10+ per session.** These are estimates — actual costs vary based on prompt length, image sizes, and current API pricing.
 >
 > **Set spend limits on your API accounts:**
 > - **Gemini:** [Manage billing & limits](https://aistudio.google.com/)
 > - **Claude:** [Manage billing & limits](https://console.anthropic.com/settings/billing)
 >
-> **We are not responsible for any API charges incurred.** By using this app, you acknowledge that you are using your own API keys at your own expense and discretion.
+> **We are not responsible for any API charges incurred.** By using this app, you acknowledge that you are using your own API keys at your own expense and discretion. Monitor your usage regularly.
 
 ---
 
@@ -75,12 +76,10 @@ Enter both keys on the Setup page when you first open the app.
 
 ## How It Works
 
-1. **Brand DNA** — Claude analyzes your product URL and extracts brand colors, voice, audience, and visual style
-2. **Assets** — Product images and logos are collected from the website (or uploaded manually)
-3. **Templates** — AI selects best-matching ad formats from the ~4,000 bundled templates
-4. **Briefing** — Claude writes a creative brief per ad: headline, copy, layout, and strategic angle
-5. **Generation** — Gemini composites the brief + template + real product photos into finished ads
-6. **QA** — Claude reviews each ad for brand consistency and text accuracy, iterating up to 2x
+1. **Brand Research** — Enter your product page URL. Claude analyzes your brand, competitors, colors, voice, and audience. Review and edit anything it got wrong, upload your own assets here as well.
+2. **Upload Assets** — Upload product photos, logos, and inspiration ads — the tool pulls from the site too. More assets = better, more varied ads — especially stickers, icons, backgrounds.
+3. **Generate** — Choose a quality tier, pick how many ads and which sizes (1:1, 3:4, 9:16), and hit Generate.
+4. **Review & Resize** — Click any ad to see it full-size. Resize to other aspect ratios with one click. Save and download your favorites.
 
 ---
 
@@ -94,12 +93,25 @@ Enter both keys on the Setup page when you first open the app.
 
 ---
 
+## Tips
+
+- You can **cancel** generation mid-way — already-completed ads are kept
+- Upload **competitor ads** as inspiration under the first page's advanced settings section — the AI will analyze their strategy and riff on it
+- Upload your **own past ads** as custom templates for the AI to follow
+- Errors show as **pop-up notifications** in the bottom-right corner
+
+---
+
+## Video Tutorial
+
+[Watch the walkthrough on Loom](https://www.loom.com/share/97b31fde87e940c9b9da66fd040c9463)
+
+---
+
 ## What's Included
 
 - **~4,000 ad templates** downloaded automatically during install
 - Upload your own templates via Advanced Settings on the Setup page
-- Cancel generation mid-way — already-completed ads are kept
-- Resize any ad to 1:1, 3:4, or 9:16 with one click
 
 ## Tech Stack
 
@@ -122,6 +134,4 @@ Enter both keys on the Setup page when you first open the app.
 
 ---
 
-## License
-
-For personal and internal use only. Not for redistribution.
+*Questions? DM me on X [@Peter_Quadrel](https://x.com/Peter_Quadrel)*
