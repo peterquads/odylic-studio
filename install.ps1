@@ -7,6 +7,13 @@
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"   # Invoke-WebRequest is 10-100x slower with progress bar
 
+# Ensure scripts (like npm.ps1) can run — Windows blocks them by default
+$currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
+if ($currentPolicy -eq "Restricted" -or $currentPolicy -eq "Undefined") {
+    Write-Host "  Enabling script execution for current user..."
+    Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+}
+
 $REPO = "peterquads/odylic-studio"
 $INSTALL_DIR = Join-Path $HOME "odylic-studio"
 
