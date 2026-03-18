@@ -96,10 +96,12 @@ export async function generateImage(
     },
   }))
 
+  console.log(`[GEMINI] imageConfig:`, JSON.stringify(imageConfig), `| models: ${model} → ${fallbackModel} → ${MODEL_IMAGE_FAST}`)
+
   const params = {
     contents: { parts: [...imageParts, { text: prompt }] },
     config: {
-      responseModalities: ['IMAGE' as any],
+      responseModalities: ['TEXT' as any, 'IMAGE' as any],
       imageConfig,
     },
   }
@@ -125,8 +127,9 @@ export async function generateImage(
         )
       )
       if (currentModel !== model) {
-        console.log(`Used fallback model: ${currentModel}`)
+        console.log(`[GEMINI] Used fallback model: ${currentModel}`)
       }
+      console.log(`[GEMINI] ✓ Success: ${friendlyModel(currentModel)} (${currentModel})`)
       notifyModelUsed('Gemini (image gen)', currentModel)
       return { imageUrl: extractImage(response), modelUsed: friendlyModel(currentModel) }
     } catch (error: any) {
