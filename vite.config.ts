@@ -142,8 +142,31 @@ function externalTemplatesPlugin(): Plugin {
   }
 }
 
+// Shutdown endpoint — lets the UI quit the server cleanly
+function shutdownPlugin(): Plugin {
+  function handler(httpServer: any) {
+    return (_req: any, res: any) => {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.end('OK')
+      setTimeout(() => {
+        httpServer?.close()
+        process.exit(0)
+      }, 200)
+    }
+  }
+  return {
+    name: 'shutdown',
+    configureServer(server) {
+      server.middlewares.use('/api/shutdown', handler(server.httpServer))
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use('/api/shutdown', handler(server.httpServer))
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), imageProxyPlugin(), externalTemplatesPlugin()],
+  plugins: [react(), tailwindcss(), imageProxyPlugin(), externalTemplatesPlugin(), shutdownPlugin()],
   server: { port: 3000 },
   preview: { port: 3000 },
   // Exclude templates symlink from public dir copy during build

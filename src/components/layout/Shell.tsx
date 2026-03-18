@@ -9,6 +9,7 @@ import {
   Heart,
   X,
   AlertTriangle,
+  Power,
 } from 'lucide-react'
 import { useStore } from '../../store'
 import { ProfileManager } from '../profiles/ProfileManager'
@@ -86,6 +87,17 @@ export function Shell({ children }: { children: ReactNode }) {
               <span className="ml-auto text-[10px] bg-text-primary text-white rounded-full px-1.5 py-0.5">{savedCount}</span>
             </button>
           )}
+          <button
+            onClick={() => {
+              fetch('/api/shutdown').catch(() => {})
+              document.title = 'Odylic Studio — Closed'
+              document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:serif;color:#444;"><p>Odylic Studio has been closed. You can close this tab.</p></div>'
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-red-50 hover:text-red-600 transition-all"
+          >
+            <Power size={16} />
+            Quit
+          </button>
         </div>
       </nav>
 
