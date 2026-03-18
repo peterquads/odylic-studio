@@ -24,9 +24,9 @@ const ASPECT_RATIOS: { value: AspectRatio; label: string; icon: any; desc: strin
 ]
 
 const QUALITY_TIERS: { value: ModelTier; label: string; desc: string; tooltip: string; icon: any }[] = [
-  { value: 'standard', label: 'Standard', desc: 'Fast', tooltip: '1K (1024px) · Gemini 2.5 Flash · Free tier', icon: Zap },
-  { value: 'hd', label: 'HD', desc: 'Better model', tooltip: '1K (1024px) · Gemini 3.1 Flash → Pro fallback · Paid tier (falls back to free)', icon: Sparkles },
-  { value: '2k', label: '2K', desc: 'High res', tooltip: '2K (2048px) · Gemini 3 Pro · Paid tier only (~$0.13/image)', icon: Crown },
+  { value: 'standard', label: 'Standard', desc: 'Fast', tooltip: '1K · Nano Banana · Free tier', icon: Zap },
+  { value: 'hd', label: 'HD', desc: 'Better model', tooltip: '1K · Nano Banana 2 → Nano Banana Pro fallback', icon: Sparkles },
+  { value: '2k', label: '2K', desc: 'High res', tooltip: '2K · Nano Banana Pro · Paid tier (~$0.13/img)', icon: Crown },
 ]
 
 export function GeneratePanelPage() {
