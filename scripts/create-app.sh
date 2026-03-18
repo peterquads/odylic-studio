@@ -106,7 +106,7 @@ create_windows_shortcut() {
   cat > "$INSTALL_DIR/start.bat" << 'BAT'
 @echo off
 cd /d "%~dp0"
-start /b /min cmd /c "npm run dev > .server.log 2>&1"
+start /b /min cmd /c "npm start > .server.log 2>&1"
 timeout /t 4 /nobreak > nul
 start http://localhost:3000
 BAT
@@ -137,7 +137,7 @@ create_linux_desktop() {
 Type=Application
 Name=Odylic Studio
 Comment=AI Ad Creative Tool
-Exec=bash -c 'cd $INSTALL_DIR && npm run dev & sleep 3 && xdg-open http://localhost:3000'
+Exec=bash -c 'cd $INSTALL_DIR && npm start & sleep 3 && xdg-open http://localhost:3000'
 Icon=$INSTALL_DIR/assets/odylic-icon.png
 Terminal=false
 Categories=Graphics;Development;

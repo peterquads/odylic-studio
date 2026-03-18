@@ -37,12 +37,12 @@ if (-not $gitCmd) {
 
     if (-not $gitUrl) {
         Write-Host "  Could not find Git installer. Please install manually from https://git-scm.com" -ForegroundColor Red
-        exit 1
+        return
     }
 
     Invoke-WebRequest -Uri $gitUrl -OutFile $gitInstaller -UseBasicParsing
     Write-Host "  Running Git installer (follow the prompts)..."
-    Start-Process -FilePath $gitInstaller -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
+    Start-Process -FilePath $gitInstaller -ArgumentList "/VERYSILENT", "/NORESTART" -Wait -Verb RunAs
     Remove-Item $gitInstaller -ErrorAction SilentlyContinue
 
     # Refresh PATH so git is available
@@ -51,7 +51,7 @@ if (-not $gitCmd) {
     $gitCmd = Get-Command git -ErrorAction SilentlyContinue
     if (-not $gitCmd) {
         Write-Host "  Git installed but not found in PATH. Please restart PowerShell and run this script again." -ForegroundColor Red
-        exit 1
+        return
     }
     Write-Host "  * Git installed" -ForegroundColor Green
 } else {
@@ -71,7 +71,7 @@ if (-not $nodeCmd) {
 
     Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeInstaller -UseBasicParsing
     Write-Host "  Running Node.js installer (follow the prompts)..."
-    Start-Process msiexec.exe -ArgumentList "/i", $nodeInstaller, "/passive", "/norestart" -Wait
+    Start-Process msiexec.exe -ArgumentList "/i", $nodeInstaller, "/passive", "/norestart" -Wait -Verb RunAs
     Remove-Item $nodeInstaller -ErrorAction SilentlyContinue
 
     # Refresh PATH
@@ -80,7 +80,7 @@ if (-not $nodeCmd) {
     $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
     if (-not $nodeCmd) {
         Write-Host "  Node.js installed but not found in PATH. Please restart PowerShell and run this script again." -ForegroundColor Red
-        exit 1
+        return
     }
     $nodeVer = & node -v
     Write-Host "  * Node.js $nodeVer installed" -ForegroundColor Green
@@ -174,34 +174,39 @@ if ($npmCmd -and $npmCmd.EndsWith(".ps1")) {
 }
 if (-not $npmCmd) { $npmCmd = "npm" }
 
+# Quote npm path for cmd.exe (handles "C:\Program Files\..." spaces)
+$npmCmdQuoted = "`"$npmCmd`""
+
 $startBat = Join-Path $INSTALL_DIR "start.bat"
-@"
+$batContent = @"
 @echo off
+setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
 REM Check if server is already running
-powershell -Command "try { Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
-if %errorlevel%==0 (
+powershell -NoProfile -Command "try { Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop >$null; exit 0 } catch { exit 1 }" >nul 2>&1
+if !errorlevel!==0 (
     start http://localhost:3000
     exit /b
 )
 
 REM Start preview server in a hidden window (lightweight, no file watching)
-start /min "" cmd /c "$npmCmd start > .server.log 2>&1"
+start /min "" cmd /c "$npmCmdQuoted start > .server.log 2>&1"
 
 REM Wait for server then open browser
 echo Starting Odylic Studio...
 for /L %%i in (1,1,30) do (
-    powershell -Command "try { Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
+    powershell -NoProfile -Command "try { Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop >$null; exit 0 } catch { exit 1 }" >nul 2>&1
     if !errorlevel!==0 (
         start http://localhost:3000
         exit /b
     )
     timeout /t 1 /nobreak >nul
 )
-echo Could not start server. Run: cd %~dp0 ^&^& npm start
+echo Could not start server. Run: cd %~dp0 && npm start
 pause
-"@ | Set-Content -Path $startBat -Encoding ASCII
+"@
+$batContent | Set-Content -Path $startBat -Encoding ASCII
 
 # ── 7. Create desktop shortcut ────────────────────────────────
 
