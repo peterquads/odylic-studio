@@ -16,29 +16,70 @@ echo "  ║     Installing Odylic Studio  ║"
 echo "  ╚═══════════════════════════════╝"
 echo ""
 
-# 1. Check for Node.js
-if ! command -v node &> /dev/null; then
-  echo "  Node.js is required but not installed."
-  echo "  Install it from: https://nodejs.org"
-  echo ""
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "https://nodejs.org"
-  elif command -v start &> /dev/null; then
-    start "https://nodejs.org"
-  elif command -v xdg-open &> /dev/null; then
-    xdg-open "https://nodejs.org"
-  fi
-  exit 1
-fi
-echo "  ✓ Node.js $(node -v) found"
-
-# 2. Check for git
+# 1. Auto-install Git if missing
 if ! command -v git &> /dev/null; then
-  echo "  Git is required but not installed."
-  echo "  Install it from: https://git-scm.com"
-  exit 1
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "  Installing Git via Xcode Command Line Tools..."
+    echo "  (A popup may appear — click 'Install' and wait)"
+    xcode-select --install 2>/dev/null || true
+    # Wait for xcode-select to finish (user clicks Install in popup)
+    until command -v git &> /dev/null; do
+      sleep 5
+    done
+    echo "  ✓ Git installed"
+  else
+    echo "  Git is required but not installed."
+    echo "  Install it from: https://git-scm.com"
+    exit 1
+  fi
+else
+  echo "  ✓ Git found"
 fi
-echo "  ✓ Git found"
+
+# 2. Auto-install Node.js if missing
+if ! command -v node &> /dev/null; then
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Try Homebrew first (fastest), then fall back to official installer
+    if command -v brew &> /dev/null; then
+      echo "  Installing Node.js via Homebrew..."
+      brew install node
+    else
+      echo "  Installing Node.js..."
+      NODE_VERSION="22.14.0"
+      ARCH=$(uname -m)
+      if [ "$ARCH" = "arm64" ]; then
+        NODE_PKG="node-v${NODE_VERSION}-darwin-arm64.tar.gz"
+      else
+        NODE_PKG="node-v${NODE_VERSION}-darwin-x64.tar.gz"
+      fi
+      NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/${NODE_PKG}"
+      TMP_NODE="${TMPDIR:-/tmp}/$NODE_PKG"
+      curl -fSL -o "$TMP_NODE" "$NODE_URL"
+      sudo mkdir -p /usr/local/lib/nodejs
+      sudo tar -xzf "$TMP_NODE" -C /usr/local/lib/nodejs
+      NODE_DIR="/usr/local/lib/nodejs/node-v${NODE_VERSION}-darwin-${ARCH}"
+      export PATH="$NODE_DIR/bin:$PATH"
+      # Add to shell profile so it persists
+      PROFILE="$HOME/.zprofile"
+      if ! grep -q "nodejs" "$PROFILE" 2>/dev/null; then
+        echo "export PATH=\"$NODE_DIR/bin:\$PATH\"" >> "$PROFILE"
+      fi
+      rm -f "$TMP_NODE"
+    fi
+    if command -v node &> /dev/null; then
+      echo "  ✓ Node.js $(node -v) installed"
+    else
+      echo "  ✗ Node.js installation failed. Install manually from https://nodejs.org"
+      exit 1
+    fi
+  else
+    echo "  Node.js is required but not installed."
+    echo "  Install it from: https://nodejs.org"
+    exit 1
+  fi
+else
+  echo "  ✓ Node.js $(node -v) found"
+fi
 
 # 3. Clone repo (source code only, ~50 MB)
 if [ -d "$INSTALL_DIR/.git" ]; then
