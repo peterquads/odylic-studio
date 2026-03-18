@@ -5,6 +5,7 @@
 # ─────────────────────────────────────────
 
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"   # Invoke-WebRequest is 10-100x slower with progress bar
 
 $REPO = "peterquads/odylic-studio"
 $INSTALL_DIR = Join-Path $HOME "odylic-studio"
