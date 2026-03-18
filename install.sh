@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────
 #  Odylic Studio — One-command installer
 #  macOS / Linux: curl -fsSL https://raw.githubusercontent.com/peterquads/odylic-studio/main/install.sh | bash
-#  Windows (Git Bash): same command, or run install.bat
+#  Windows (PowerShell): irm https://raw.githubusercontent.com/peterquads/odylic-studio/main/install.ps1 | iex
 # ─────────────────────────────────────────
 
 set -e

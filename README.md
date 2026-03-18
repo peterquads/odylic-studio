@@ -2,18 +2,24 @@
 
 AI-powered ad creative generation. Enter a product URL, and the system researches your brand, selects templates, writes copy, and generates on-brand ad creatives.
 
-## Getting Started
+## Install (one command)
 
-**Prerequisites:** [Node.js](https://nodejs.org/) 18+ (includes npm)
-
-### Mac
-Double-click **`start.command`** — it installs dependencies on first launch and opens the app in your browser.
-
-### Windows
-Double-click **`start.bat`** — same thing.
-
-### Terminal
+**Mac / Linux** — open Terminal and paste:
 ```bash
+curl -fsSL https://raw.githubusercontent.com/peterquads/odylic-studio/main/install.sh | bash
+```
+
+**Windows** — open PowerShell and paste:
+```powershell
+irm https://raw.githubusercontent.com/peterquads/odylic-studio/main/install.ps1 | iex
+```
+
+Both commands auto-install Git and Node.js if needed, download ~4,000 ad templates, create a Desktop shortcut, and launch the app.
+
+### Manual install
+```bash
+git clone https://github.com/peterquads/odylic-studio.git ~/odylic-studio
+cd ~/odylic-studio
 npm install
 npm start
 ```
