@@ -9,7 +9,6 @@ import {
   Crown,
   Minus,
   Plus,
-  Diamond,
 } from 'lucide-react'
 import { useStore, setGenerationAbort } from '../../store'
 import { GlassCard } from '../layout/GlassCard'
@@ -28,7 +27,6 @@ const QUALITY_TIERS: { value: ModelTier; label: string; desc: string; icon: any 
   { value: 'standard', label: 'Standard', desc: 'Fast', icon: Zap },
   { value: 'hd', label: 'HD', desc: 'Higher quality', icon: Sparkles },
   { value: '2k', label: '2K', desc: 'High res', icon: Crown },
-  { value: '4k', label: '4K', desc: 'Max detail', icon: Diamond },
 ]
 
 export function GeneratePanelPage() {

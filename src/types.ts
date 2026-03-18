@@ -251,7 +251,7 @@ export interface CustomTemplate {
 // ============ Generation ============
 
 export type AspectRatio = '1:1' | '3:4' | '9:16'
-export type ModelTier = 'standard' | 'hd' | '2k' | '4k'
+export type ModelTier = 'standard' | 'hd' | '2k'
 
 export interface SizeQuantity {
   ratio: AspectRatio

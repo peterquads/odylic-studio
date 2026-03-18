@@ -65,15 +65,14 @@ export async function generateImage(
 ): Promise<string> {
   const ai = new GoogleGenAI({ apiKey })
 
-  // Always use Nano Banana 2 first, fall back to Pro then Flash
-  const model = MODEL_NANO_BANANA_2
-  const fallbackModel = modelTier === 'standard' ? MODEL_IMAGE_FAST : MODEL_IMAGE_PRO
+  // 2K needs Pro model (Flash doesn't support imageSize reliably)
+  // Standard/HD use Flash first (faster), fall back to Pro
+  const model = modelTier === '2k' ? MODEL_IMAGE_PRO : MODEL_NANO_BANANA_2
+  const fallbackModel = modelTier === '2k' ? MODEL_NANO_BANANA_2 : MODEL_IMAGE_PRO
 
   const imageConfig: any = { aspectRatio }
   if (modelTier === '2k') {
     imageConfig.imageSize = '2K'
-  } else if (modelTier === '4k') {
-    imageConfig.imageSize = '4K'
   }
 
   // Template image goes FIRST so the prompt can reference "Image 1"
@@ -145,7 +144,6 @@ export async function resizeImage(
 
   const imageConfig: any = { aspectRatio: targetRatio }
   if (modelTier === '2k') imageConfig.imageSize = '2K'
-  else if (modelTier === '4k') imageConfig.imageSize = '4K'
 
   const masterData = masterImageBase64.includes(',')
     ? masterImageBase64.split(',')[1]
