@@ -376,6 +376,9 @@ export interface AppState {
   addError: (msg: string) => void
   dismissError: (idx: number) => void
 
+  // Updates
+  updateAvailable: boolean
+
   // Reset
   resetForNewBrand: () => void
 

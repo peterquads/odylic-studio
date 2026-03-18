@@ -190,6 +190,14 @@ if !errorlevel!==0 (
     exit /b
 )
 
+REM Pull updates and rebuild if needed
+git pull --ff-only >nul 2>&1
+if !errorlevel!==0 (
+    echo Updating...
+    $npmCmdQuoted install --loglevel=error >nul 2>&1
+    $npmCmdQuoted run build --loglevel=error >nul 2>&1
+)
+
 REM Start preview server in a hidden window (lightweight, no file watching)
 start /min "" cmd /c "$npmCmdQuoted start > .server.log 2>&1"
 

@@ -89,6 +89,8 @@ export const useStore = create<AppState>()(
       addError: (msg: string) => set((s) => ({ errors: [...s.errors.slice(-4), msg] })),
       dismissError: (idx: number) => set((s) => ({ errors: s.errors.filter((_, i) => i !== idx) })),
 
+      updateAvailable: false,
+
       savedAdIds: new Set<string>(),
       toggleSavedAd: (id) => set((s) => {
         const next = new Set(s.savedAdIds)
