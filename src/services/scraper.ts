@@ -1860,7 +1860,10 @@ async function jinaSearch(query: string, limit = 5): Promise<string> {
       signal: controller.signal,
     })
     clearTimeout(timeout)
-    if (!response.ok) return ''
+    if (!response.ok) {
+      console.log(`[JINA] Search "${query.slice(0, 40)}..." returned ${response.status} — skipping (non-critical)`)
+      return ''
+    }
     const data = await response.json()
     const results = data.data || []
     return results
@@ -1939,9 +1942,9 @@ async function callWithRetry(
   messages: any[],
   maxTokens: number
 ): Promise<string> {
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 60000)
+    const timeout = setTimeout(() => controller.abort(), 90000)
     let response: Response
     try {
       response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1961,9 +1964,9 @@ async function callWithRetry(
       })
     } catch (e: any) {
       clearTimeout(timeout)
-      if (e.name === 'AbortError' && attempt < 4) {
-        console.log(`Request timeout (${model}), retrying...`)
-        continue
+      if (e.name === 'AbortError') {
+        // Timeout — throw immediately so cascade can try a faster model
+        throw new Error(`timeout:${model}`)
       }
       throw e
     }
@@ -1982,7 +1985,7 @@ async function callWithRetry(
       throw new Error(`Claude API auth error (${response.status}): Check your API key`)
     }
 
-    if ((response.status === 429 || response.status === 529) && attempt < 4) {
+    if ((response.status === 429 || response.status === 529) && attempt < 2) {
       const delay = response.status === 529 ? (attempt + 1) * 15000 : (attempt + 1) * 20000
       console.log(`${response.status === 529 ? 'Overloaded' : 'Rate limited'} (${model}), waiting ${delay / 1000}s...`)
       await new Promise((r) => setTimeout(r, delay))
@@ -2022,6 +2025,10 @@ async function callBestAvailableModel(
     } catch (e: any) {
       if (e.message?.startsWith('model_not_found')) {
         console.log(`Model ${candidate} not available, trying next...`)
+        continue
+      }
+      if (e.message?.startsWith('timeout:')) {
+        console.log(`Model ${candidate} timed out, trying faster model...`)
         continue
       }
       throw e
