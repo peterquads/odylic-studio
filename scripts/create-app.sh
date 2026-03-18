@@ -78,7 +78,7 @@ fi
 
 # Start server in background
 cd "$INSTALL_DIR"
-nohup npm run dev > "$LOG_FILE" 2>&1 &
+nohup npm start > "$LOG_FILE" 2>&1 &
 echo $! > "$PID_FILE"
 
 # Wait for server then open browser — in background so .app exits immediately

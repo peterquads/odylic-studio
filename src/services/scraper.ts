@@ -2009,7 +2009,6 @@ async function callBestAvailableModel(
     return callWithRetry(apiKey, resolvedResearchModel, messages, maxTokens)
   }
 
-  let lastError: any
   for (const candidate of RESEARCH_CANDIDATES) {
     try {
       const result = await callWithRetry(apiKey, candidate, messages, maxTokens)
@@ -2017,7 +2016,6 @@ async function callBestAvailableModel(
       console.log(`Brand research using model: ${candidate}`)
       return result
     } catch (e: any) {
-      lastError = e
       const msg = e.message || ''
       // Auth errors are fatal — don't cascade, user's key is bad
       if (msg.includes('auth') || msg.includes('401') || msg.includes('403')) throw e

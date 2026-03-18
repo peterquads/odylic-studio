@@ -152,6 +152,12 @@ if ($templateCount -lt 100) {
 Write-Host "  Installing dependencies..."
 Push-Location $INSTALL_DIR
 & npm install --loglevel=error 2>&1 | Select-Object -Last 1
+
+# ── 5b. Build production bundle (preview server is much lighter on CPU) ──
+
+Write-Host "  Building app..."
+& npm run build --loglevel=error 2>&1 | Select-Object -Last 1
+Write-Host "  * Build complete" -ForegroundColor Green
 Pop-Location
 
 Write-Host ""
@@ -180,12 +186,12 @@ if %errorlevel%==0 (
     exit /b
 )
 
-REM Start server in a hidden window
-start /min "" cmd /c "$npmCmd run dev > .server.log 2>&1"
+REM Start preview server in a hidden window (lightweight, no file watching)
+start /min "" cmd /c "$npmCmd start > .server.log 2>&1"
 
 REM Wait for server then open browser
 echo Starting Odylic Studio...
-for /L %%i in (1,1,60) do (
+for /L %%i in (1,1,30) do (
     powershell -Command "try { Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
     if !errorlevel!==0 (
         start http://localhost:3000
@@ -193,7 +199,7 @@ for /L %%i in (1,1,60) do (
     )
     timeout /t 1 /nobreak >nul
 )
-echo Could not start server. Run: cd %~dp0 ^&^& npm run dev
+echo Could not start server. Run: cd %~dp0 ^&^& npm start
 pause
 "@ | Set-Content -Path $startBat -Encoding ASCII
 
@@ -220,7 +226,7 @@ try {
     Write-Host "  * Desktop shortcut created: Odylic Studio" -ForegroundColor Green
 } catch {
     Write-Host "  Warning: Could not create desktop shortcut: $_" -ForegroundColor Yellow
-    Write-Host "  You can launch manually: cd ~/odylic-studio && npm run dev" -ForegroundColor Yellow
+    Write-Host "  You can launch manually: cd ~/odylic-studio && npm start" -ForegroundColor Yellow
 }
 
 # Also copy start.bat to Desktop as a fallback if shortcut failed
@@ -252,11 +258,11 @@ if ($portProcess) {
     $portProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
 }
 
-# Start dev server in background using cmd (avoids ps1 execution issues)
-Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$npmCmd`" run dev > .server.log 2>&1" -WindowStyle Hidden
+# Start preview server in background (lightweight — no file watching or HMR)
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$npmCmd`" start > .server.log 2>&1" -WindowStyle Hidden
 
-# Wait for server then open browser — 60s timeout (first Vite run is slow)
-Write-Host "  Waiting for server to start (first run may take a minute)..."
+# Wait for server then open browser
+Write-Host "  Waiting for server to start..."
 $attempts = 0
 while ($attempts -lt 60) {
     try {

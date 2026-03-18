@@ -132,11 +132,16 @@ echo "  Installing dependencies..."
 cd "$INSTALL_DIR"
 npm install --loglevel=error 2>&1 | tail -1
 
+# 6. Build production bundle (so we can serve with preview — much lighter on CPU)
+echo "  Building app..."
+npm run build --loglevel=error 2>&1 | tail -1
+echo "  ✓ Build complete"
+
 echo ""
 echo "  ✓ Odylic Studio installed at $INSTALL_DIR"
 echo ""
 
-# 6. Create desktop app / shortcut
+# 7. Create desktop app / shortcut
 if [ -f "$INSTALL_DIR/scripts/create-app.sh" ]; then
   bash "$INSTALL_DIR/scripts/create-app.sh" "$INSTALL_DIR"
 fi
@@ -152,14 +157,14 @@ echo ""
 echo "  Launching now..."
 echo ""
 
-# 7. Start server directly and open default browser
+# 8. Start server and open default browser
 cd "$INSTALL_DIR"
 
 # Kill anything already on port 3000
 lsof -ti:3000 2>/dev/null | xargs kill 2>/dev/null || true
 
-# Start dev server in background
-nohup npm run dev > "$INSTALL_DIR/.server.log" 2>&1 &
+# Start preview server in background (lightweight — no file watching or HMR)
+nohup npm start > "$INSTALL_DIR/.server.log" 2>&1 &
 echo $! > "$INSTALL_DIR/.server.pid"
 
 # Wait for server to be ready, then open default browser
