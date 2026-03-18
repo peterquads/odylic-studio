@@ -72,11 +72,17 @@ export async function generateImage(
 ): Promise<{ imageUrl: string; modelUsed: string }> {
   const ai = new GoogleGenAI({ apiKey })
 
-  // 2K needs Pro model (Flash doesn't support imageSize reliably)
-  // Standard/HD use Flash first (faster), fall back to Pro
-  const model = modelTier === '2k' ? MODEL_IMAGE_PRO : MODEL_NANO_BANANA_2
-  const fallbackModel = modelTier === '2k' ? MODEL_NANO_BANANA_2 : MODEL_IMAGE_PRO
+  // Standard (Fast): Nano Banana (free) → Flash fallback
+  // HD (Quality): Nano Banana 2 → Pro fallback
+  // 2k (Pro): Nano Banana Pro → Nano Banana 2 fallback
+  const model = modelTier === '2k' ? MODEL_IMAGE_PRO
+    : modelTier === 'hd' ? MODEL_NANO_BANANA_2
+    : MODEL_IMAGE_FAST
+  const fallbackModel = modelTier === '2k' ? MODEL_NANO_BANANA_2
+    : modelTier === 'hd' ? MODEL_IMAGE_PRO
+    : MODEL_NANO_BANANA_2
 
+  // Request higher res on Pro — may be silently downgraded to 1K by Google's preview models
   const imageConfig: any = { aspectRatio }
   if (modelTier === '2k') {
     imageConfig.imageSize = '2K'
@@ -153,7 +159,6 @@ export async function resizeImage(
   const ai = new GoogleGenAI({ apiKey })
 
   const imageConfig: any = { aspectRatio: targetRatio }
-  if (modelTier === '2k') imageConfig.imageSize = '2K'
 
   const masterData = masterImageBase64.includes(',')
     ? masterImageBase64.split(',')[1]
