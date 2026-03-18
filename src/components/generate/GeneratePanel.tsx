@@ -650,22 +650,26 @@ export function GeneratePanelPage() {
         <p className="text-xs text-text-muted uppercase tracking-wider mb-3">Quality</p>
         <div className="flex gap-2">
           {QUALITY_TIERS.map(({ value, label, desc, tooltip, icon: Icon }) => (
-            <button
-              key={value}
-              title={tooltip}
-              onClick={() => setGenerationConfig({ modelTier: value })}
-              className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all border ${
-                generationConfig.modelTier === value
-                  ? 'bg-text-primary text-white border-transparent'
-                  : 'bg-white/40 border-black/[0.06] text-text-secondary hover:bg-white/60'
-              }`}
-            >
-              <Icon size={14} />
-              <div>
-                <p className="font-medium text-xs">{label}</p>
-                <p className="text-[10px] opacity-70">{desc}</p>
+            <div key={value} className="relative flex-1 group">
+              <button
+                onClick={() => setGenerationConfig({ modelTier: value })}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all border ${
+                  generationConfig.modelTier === value
+                    ? 'bg-text-primary text-white border-transparent'
+                    : 'bg-white/40 border-black/[0.06] text-text-secondary hover:bg-white/60'
+                }`}
+              >
+                <Icon size={14} />
+                <div>
+                  <p className="font-medium text-xs">{label}</p>
+                  <p className="text-[10px] opacity-70">{desc}</p>
+                </div>
+              </button>
+              <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg text-[10px] leading-snug text-text-secondary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg z-50">
+                {tooltip}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-white/70" />
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </GlassCard>

@@ -123,7 +123,7 @@ export async function generateImage(
       notifyModelUsed('Gemini (image gen)', currentModel)
       return extractImage(response)
     } catch (error: any) {
-      console.warn(`Model ${currentModel} failed:`, error?.message?.slice(0, 100))
+      console.warn(`Model ${currentModel} failed:`, error?.message?.slice(0, 200), error?.status || '')
       lastError = error
       // Continue to next model
     }
