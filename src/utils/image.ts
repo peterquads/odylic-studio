@@ -167,6 +167,64 @@ export async function createMaskFromRegions(
   })
 }
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('Failed to load image for composite'))
+    img.src = src
+  })
+}
+
+// Composite an edited image onto the original, using a feathered mask so only the
+// edit regions take new pixels. Untouched areas stay bit-identical to the original,
+// which stops Nano Banana's encode/decode loss from compounding across edits.
+// Regions are 0-1 fractions of image dimensions.
+export async function compositeMaskedEdit(
+  originalDataUrl: string,
+  editedDataUrl: string,
+  regions: { x: number; y: number; w: number; h: number }[],
+  featherPx = 12,
+): Promise<string> {
+  const [original, edited] = await Promise.all([
+    loadImage(originalDataUrl),
+    loadImage(editedDataUrl),
+  ])
+
+  const W = original.naturalWidth
+  const H = original.naturalHeight
+  if (!W || !H) throw new Error('Original image has no dimensions')
+
+  const base = document.createElement('canvas')
+  base.width = W
+  base.height = H
+  const baseCtx = base.getContext('2d')!
+  baseCtx.drawImage(original, 0, 0)
+
+  // Edit layer: scale model output to original size, then carve alpha with feathered mask
+  const editLayer = document.createElement('canvas')
+  editLayer.width = W
+  editLayer.height = H
+  const editCtx = editLayer.getContext('2d')!
+  editCtx.imageSmoothingEnabled = true
+  editCtx.imageSmoothingQuality = 'high'
+  editCtx.drawImage(edited, 0, 0, W, H)
+
+  editCtx.globalCompositeOperation = 'destination-in'
+  editCtx.filter = `blur(${featherPx}px)`
+  editCtx.fillStyle = 'white'
+  for (const r of regions) {
+    editCtx.fillRect(r.x * W, r.y * H, r.w * W, r.h * H)
+  }
+  editCtx.filter = 'none'
+  editCtx.globalCompositeOperation = 'source-over'
+
+  baseCtx.drawImage(editLayer, 0, 0)
+
+  // PNG to avoid stacking JPEG artifacts on subsequent edits
+  return base.toDataURL('image/png')
+}
+
 // Template base URL — local dev: Vite middleware, production: CDN
 const TEMPLATES_BASE = import.meta.env.VITE_TEMPLATES_BASE_URL || '/templates'
 

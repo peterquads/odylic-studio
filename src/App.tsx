@@ -9,23 +9,12 @@ const BrandDnaPage = lazy(() => import('./components/brand/BrandDna').then(m => 
 const AssetLibraryPage = lazy(() => import('./components/assets/AssetLibrary').then(m => ({ default: m.AssetLibraryPage })))
 const GeneratePanelPage = lazy(() => import('./components/generate/GeneratePanel').then(m => ({ default: m.GeneratePanelPage })))
 const ResultsGridPage = lazy(() => import('./components/results/ResultsGrid').then(m => ({ default: m.ResultsGridPage })))
+const ResizeToolPage = lazy(() => import('./components/resize/ResizeTool').then(m => ({ default: m.ResizeToolPage })))
 
 function App() {
   const step = useStore((s) => s.step)
   const catalog = useStore((s) => s.catalog)
   const setCatalog = useStore((s) => s.setCatalog)
-  const isGenerating = useStore((s) => s.isGenerating)
-  const isResearching = useStore((s) => s.isResearching)
-
-  // Warn before closing tab during generation or research
-  useEffect(() => {
-    if (!isGenerating && !isResearching) return
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-    }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [isGenerating, isResearching])
 
   // Lazy-load catalog data on startup
   useEffect(() => {
@@ -45,6 +34,7 @@ function App() {
         {step === 'assets' && <AssetLibraryPage />}
         {step === 'generate' && <GeneratePanelPage />}
         {step === 'results' && <ResultsGridPage />}
+        {step === 'resize' && <ResizeToolPage />}
       </Suspense>
     </Shell>
   )

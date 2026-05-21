@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { X, Trash2, Loader2 } from 'lucide-react'
 import { editImage } from '../../services/gemini'
 import { buildEditPrompt } from '../../services/claude'
+import { compositeMaskedEdit } from '../../utils/image'
 import { useStore } from '../../store'
 import type { GeneratedAd, UploadedAsset } from '../../types'
 
@@ -187,13 +188,32 @@ export function RegionEditor({ ad, assets = [], onClose, onSave }: Props) {
       }
 
       // Stage 2: Gemini executes the edit with real images attached
-      const newImageUrl = await editImage(
+      const modelOutputUrl = await editImage(
         geminiApiKey,
         ad.imageUrl,
         mask,
         editPrompt,
         referenceImages,
       )
+
+      // Stage 3: composite — keep original pixels outside the mask so unchanged
+      // regions don't degrade across repeated edits. Falls back to raw model output
+      // if compositing fails (e.g. CORS on an external image URL).
+      let newImageUrl = modelOutputUrl
+      try {
+        newImageUrl = await compositeMaskedEdit(
+          ad.imageUrl,
+          modelOutputUrl,
+          validRegions.map((r) => ({
+            x: r.x / 100,
+            y: r.y / 100,
+            w: r.width / 100,
+            h: r.height / 100,
+          })),
+        )
+      } catch (e) {
+        console.warn('Mask composite failed, using raw model output:', e)
+      }
 
       const newAd: GeneratedAd = {
         id: generateId(),

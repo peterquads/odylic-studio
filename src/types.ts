@@ -318,7 +318,7 @@ export interface CustomCopy {
 
 // ============ App State ============
 
-export type AppStep = 'setup' | 'brand' | 'assets' | 'generate' | 'results'
+export type AppStep = 'setup' | 'brand' | 'assets' | 'generate' | 'results' | 'resize'
 
 export interface AppState {
   step: AppStep
