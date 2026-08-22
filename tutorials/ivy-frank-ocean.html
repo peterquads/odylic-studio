@@ -1,0 +1,591 @@
+<title>Ivy on Guitar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+:root{
+  --bg:#EEF1EA; --surface:#F7F9F4; --surface-2:#E7ECE2;
+  --ink:#16211A; --ink-2:#4A5A50; --ink-3:#718276;
+  --rule:#D3DBCE; --rule-strong:#B9C5B2;
+  --ivy:#2F6B41; --ivy-ink:#1D4A2C; --ivy-soft:#DDE9DC;
+  --amber:#8F5D13; --amber-soft:#EFE3C9;
+  --shadow:0 1px 2px rgba(22,33,26,.06), 0 8px 24px -12px rgba(22,33,26,.18);
+  --dot:#C3CDBC;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Newsreader",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1512; --surface:#16201B; --surface-2:#1C2822;
+    --ink:#E2E9DF; --ink-2:#9BAB9F; --ink-3:#7D8E82;
+    --rule:#26332C; --rule-strong:#35453A;
+    --ivy:#79C88E; --ivy-ink:#A8DDB6; --ivy-soft:#1A2C21;
+    --amber:#E3B25F; --amber-soft:#2C2317;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+    --dot:#33433A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1512; --surface:#16201B; --surface-2:#1C2822;
+  --ink:#E2E9DF; --ink-2:#9BAB9F; --ink-3:#7D8E82;
+  --rule:#26332C; --rule-strong:#35453A;
+  --ivy:#79C88E; --ivy-ink:#A8DDB6; --ivy-soft:#1A2C21;
+  --amber:#E3B25F; --amber-soft:#2C2317;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  --dot:#33433A;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--body); font-size:18px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:52rem; margin:0 auto; padding:clamp(1.25rem,4vw,3rem) clamp(1.1rem,4vw,2rem) 5rem}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; line-height:1.08}
+p{margin:0}
+a{color:var(--ivy-ink); text-underline-offset:3px; text-decoration-thickness:1px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--ivy); outline-offset:3px; border-radius:3px}
+.eyebrow{
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600;
+}
+
+/* ---------- masthead ---------- */
+.masthead{display:flex; flex-direction:column; gap:1.25rem; padding-bottom:1.75rem; border-bottom:1px solid var(--rule)}
+.title-row{display:flex; align-items:flex-end; gap:1rem; flex-wrap:wrap}
+h1{font-size:clamp(3.4rem,13vw,6.5rem); font-weight:800; letter-spacing:-.045em}
+.by{font-family:var(--body); font-style:italic; font-size:clamp(1.05rem,3vw,1.35rem); color:var(--ink-2); padding-bottom:.7rem}
+.lede{font-size:1.1rem; color:var(--ink-2); max-width:40ch}
+.chips{display:flex; flex-wrap:wrap; gap:.4rem}
+.chip{
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.04em;
+  border:1px solid var(--rule-strong); border-radius:999px; padding:.3rem .7rem;
+  color:var(--ink-2); background:var(--surface);
+}
+.chip strong{color:var(--ink); font-weight:600}
+
+/* ---------- sections ---------- */
+section{margin-top:3.5rem}
+.sec-head{display:flex; align-items:baseline; gap:.75rem; margin-bottom:1rem; flex-wrap:wrap}
+h2{font-size:clamp(1.5rem,4.5vw,2.1rem); font-weight:600; letter-spacing:-.02em}
+.sec-note{font-size:1.02rem; color:var(--ink-2); max-width:62ch; margin-bottom:1.5rem}
+
+/* ---------- key insight ---------- */
+.insight{
+  background:var(--ivy-soft); border:1px solid color-mix(in srgb,var(--ivy) 28%, transparent);
+  border-radius:12px; padding:1.4rem 1.5rem; display:flex; flex-direction:column; gap:.7rem;
+}
+.insight h3{font-size:1.15rem; font-weight:600; color:var(--ivy-ink)}
+.insight p{color:var(--ink-2); font-size:1rem}
+.insight .mono-line{font-family:var(--mono); font-size:.88rem; color:var(--ink); letter-spacing:.02em}
+
+/* ---------- chord bench ---------- */
+.bench{display:grid; grid-template-columns:repeat(auto-fill,minmax(184px,1fr)); gap:.9rem}
+.chordcard{
+  background:var(--surface); border:1px solid var(--rule); border-radius:12px;
+  padding:1rem .9rem 1.1rem; display:flex; flex-direction:column; align-items:center; gap:.55rem;
+  box-shadow:var(--shadow); cursor:pointer; width:100%;
+  font:inherit; color:inherit; text-align:center; transition:border-color .15s, transform .15s;
+}
+.chordcard:hover{border-color:var(--ivy); transform:translateY(-2px)}
+.chordcard.ringing{border-color:var(--ivy); background:var(--ivy-soft)}
+.cc-name{font-family:var(--display); font-size:1.4rem; font-weight:600; letter-spacing:-.02em}
+.cc-nick{font-family:var(--mono); font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ivy-ink); min-height:1.4em}
+.cc-frets{font-family:var(--mono); font-size:.78rem; color:var(--ink-3); letter-spacing:.14em}
+.cc-note{font-size:.88rem; color:var(--ink-2); line-height:1.45; text-align:left; width:100%}
+.tap-hint{font-family:var(--mono); font-size:.7rem; color:var(--ink-3); letter-spacing:.04em; margin-bottom:1rem}
+
+/* ---------- loop ---------- */
+.loop{display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1.5rem}
+.bar{
+  flex:1 1 110px; border:1px solid var(--rule); border-radius:10px; background:var(--surface);
+  padding:.85rem .75rem; display:flex; flex-direction:column; gap:.2rem; min-width:0;
+}
+.bar .b-num{font-family:var(--mono); font-size:.66rem; color:var(--ink-3); letter-spacing:.1em}
+.bar .b-ch{font-family:var(--display); font-size:1.5rem; font-weight:600; letter-spacing:-.02em}
+.bar .b-fn{font-family:var(--mono); font-size:.72rem; color:var(--ink-3); letter-spacing:.1em}
+.bar.active{border-color:var(--ivy); background:var(--ivy-soft)}
+
+/* ---------- picking machine ---------- */
+.machine{background:var(--surface); border:1px solid var(--rule); border-radius:14px; padding:1.25rem; box-shadow:var(--shadow)}
+.controls{display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem}
+.play{
+  font-family:var(--display); font-size:.95rem; font-weight:600; letter-spacing:.01em;
+  background:var(--ivy); color:var(--bg); border:none; border-radius:999px;
+  padding:.6rem 1.5rem; cursor:pointer; transition:filter .15s;
+}
+.play:hover{filter:brightness(1.08)}
+.tempo{display:flex; align-items:center; gap:.6rem; flex:1 1 220px}
+.tempo label{font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
+input[type=range]{flex:1; accent-color:var(--ivy); min-width:110px}
+.bpm{font-family:var(--mono); font-size:.95rem; font-weight:600; font-variant-numeric:tabular-nums; min-width:4.6em; text-align:right}
+
+.grid-scroll{overflow-x:auto; padding-bottom:.4rem}
+.pgrid{display:grid; grid-template-columns:auto repeat(8,minmax(30px,1fr)); gap:.28rem; min-width:340px}
+.pg-label{
+  font-family:var(--mono); font-size:.72rem; color:var(--ink-2); letter-spacing:.06em;
+  display:flex; align-items:center; justify-content:flex-end; padding-right:.6rem; white-space:nowrap;
+}
+.cell{aspect-ratio:1; border-radius:5px; background:var(--surface-2); border:1px solid transparent; position:relative}
+.cell.on{background:var(--ivy); border-color:var(--ivy)}
+.cell.on.thumb{background:var(--amber); border-color:var(--amber)}
+.cell.step{outline:2px solid var(--ink-3); outline-offset:1px}
+.pg-count{display:grid; grid-template-columns:auto repeat(8,minmax(30px,1fr)); gap:.28rem; margin-top:.4rem; min-width:340px}
+.count{font-family:var(--mono); font-size:.7rem; color:var(--ink-3); text-align:center; font-variant-numeric:tabular-nums}
+.legend{display:flex; gap:1.1rem; flex-wrap:wrap; margin-top:1rem; font-family:var(--mono); font-size:.72rem; color:var(--ink-2)}
+.swatch{display:inline-block; width:.72rem; height:.72rem; border-radius:3px; vertical-align:-1px; margin-right:.4rem}
+
+/* ---------- timeline ---------- */
+.timeline{border-left:2px solid var(--rule); margin-left:.4rem; display:flex; flex-direction:column}
+.tl-row{display:grid; grid-template-columns:5.1rem 1fr; gap:.9rem; padding:.6rem 0 .6rem 1.1rem; position:relative; align-items:baseline}
+.tl-row::before{
+  content:""; position:absolute; left:-5px; top:1.05rem; width:8px; height:8px; border-radius:50%;
+  background:var(--dot); border:2px solid var(--bg);
+}
+.tl-row.key::before{background:var(--ivy); width:10px; height:10px; left:-6px}
+.tl-row.gag::before{background:var(--amber)}
+.tl-time{
+  font-family:var(--mono); font-size:.8rem; font-variant-numeric:tabular-nums; letter-spacing:.02em;
+  color:var(--ink-2); text-decoration:none; border-bottom:1px solid var(--rule-strong); justify-self:start;
+}
+.tl-time:hover{color:var(--ivy-ink); border-color:var(--ivy)}
+.tl-what{font-size:1rem}
+.tl-row.key .tl-what{font-weight:500}
+.tl-row.gag .tl-what{color:var(--amber); font-style:italic}
+.tl-sub{display:block; font-size:.88rem; color:var(--ink-3); font-style:normal}
+
+/* ---------- ladder ---------- */
+.ladder{display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:.5rem}
+.rung{border:1px solid var(--rule); border-radius:10px; padding:.8rem .75rem; background:var(--surface); display:flex; flex-direction:column; gap:.15rem}
+.rung .r-bpm{font-family:var(--mono); font-size:1.2rem; font-weight:600; font-variant-numeric:tabular-nums}
+.rung .r-what{font-size:.86rem; color:var(--ink-2); line-height:1.4}
+.rung:last-child{border-color:var(--ivy); background:var(--ivy-soft)}
+
+/* ---------- tone + colophon ---------- */
+.two-col{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem}
+.tile{border:1px solid var(--rule); border-radius:12px; padding:1.1rem 1.15rem; background:var(--surface); display:flex; flex-direction:column; gap:.35rem}
+.tile h3{font-size:1rem; font-weight:600}
+.tile p{font-size:.92rem; color:var(--ink-2)}
+.colophon{
+  margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--rule);
+  font-size:.9rem; color:var(--ink-3); display:flex; flex-direction:column; gap:.7rem;
+}
+.colophon strong{color:var(--ink-2); font-weight:600}
+
+/* chord diagram parts — classed so no var() sits in an SVG presentation attribute */
+.dgm .d-line{stroke:var(--rule-strong); stroke-width:1}
+.dgm .d-nut{fill:var(--ink)}
+.dgm .d-mute{stroke:var(--ink-3); stroke-width:1.6; stroke-linecap:round}
+.dgm .d-open{fill:none; stroke:var(--ivy); stroke-width:1.6}
+.dgm .d-dot{fill:var(--ivy)}
+.dgm .d-num{fill:var(--surface); font-family:var(--mono); font-size:9.5px; font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="eyebrow">Guitar lesson &middot; fingerstyle &middot; beginner-friendly</span>
+    <div class="title-row">
+      <h1>Ivy</h1>
+      <span class="by">Frank Ocean</span>
+    </div>
+    <p class="lede">Four chords, one repeating arpeggio, and a bass note that keeps walking downhill. You can play the whole song with two hand shapes.</p>
+    <div class="chips">
+      <span class="chip"><strong>D minor</strong> (dorian)</span>
+      <span class="chip">~<strong>115</strong> bpm</span>
+      <span class="chip">Standard tuning</span>
+      <span class="chip">No capo</span>
+      <span class="chip">Fingerpicked</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">Start here</span></div>
+    <div class="insight">
+      <h3>The "weird C" is just an A minor that moved house</h3>
+      <p>Ivy's signature chord sounds strange because it isn't a normal C. Fret an A minor, then drop your pinky onto the 3rd fret of the A string. The top four strings never move — only the bass note changes. That's a <strong>C6</strong>, and it's why the song shimmers.</p>
+      <p class="mono-line">Am&nbsp;&nbsp;x&nbsp;0&nbsp;2&nbsp;2&nbsp;1&nbsp;0<br>C6&nbsp;&nbsp;x&nbsp;<strong>3</strong>&nbsp;2&nbsp;2&nbsp;1&nbsp;0&nbsp;&nbsp;&larr; same shape, one finger added</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>The chord bench</h2></div>
+    <p class="sec-note">Every chord in the song. Numbers under each box are the fingers to use: 1 index, 2 middle, 3 ring, 4 pinky. An open circle means play the string open; an &times; means don't play it.</p>
+    <p class="tap-hint">&#9658; Tap any chord to hear it, chorus and reverb included.</p>
+    <div class="bench" id="bench"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>The loop</h2></div>
+    <p class="sec-note">This four-bar cycle carries the intro and the chorus. One bar each, straight through, over and over. Notice bars 2 and 4 are the same chord — the movement you hear is the C6 falling to Am, not the D minor.</p>
+    <div class="loop" id="loop"></div>
+
+    <div class="machine">
+      <div class="controls">
+        <button class="play" id="play" type="button">Play the pattern</button>
+        <div class="tempo">
+          <label for="bpm">Tempo</label>
+          <input type="range" id="bpm" min="50" max="130" value="70" step="5">
+          <span class="bpm" id="bpmOut">70 bpm</span>
+        </div>
+      </div>
+      <div class="grid-scroll">
+        <div class="pgrid" id="pgrid"></div>
+        <div class="pg-count" id="pcount"></div>
+      </div>
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--amber)"></span>Thumb &mdash; bass note of the chord</span>
+        <span><span class="swatch" style="background:var(--ivy)"></span>Fingers &mdash; G, B and high E strings</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>The verse walks down</h2></div>
+    <p class="sec-note">The second section keeps a similar shape on top while the bass note descends: <strong>G</strong> under an E minor, then <strong>F</strong> under a D minor. Same picking pattern, same right hand — you're only changing what your thumb lands on.</p>
+    <div class="two-col">
+      <div class="tile">
+        <h3>Em/G &rarr; Dm/F</h3>
+        <p>Play Em with your ring finger on the 3rd fret of the low E string, then slide the whole idea to a D minor with an F in the bass. The top strings stay ringing throughout.</p>
+      </div>
+      <div class="tile">
+        <h3>Why it sounds like that</h3>
+        <p>The song sits in D dorian &mdash; a D minor scale with a raised 6th. That's where the E minor and the B diminished come from, and why it never quite settles into sadness.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Follow the lesson</h2></div>
+    <p class="sec-note">Stuart's original walkthrough runs 16 minutes. These are his own chapter marks &mdash; click any timestamp to jump straight there.</p>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Get it up to speed</h2></div>
+    <p class="sec-note">The pattern is not hard; the consistency is. Move up a rung only when you can loop all four bars three times without a stumble.</p>
+    <div class="ladder">
+      <div class="rung"><span class="r-bpm">60</span><span class="r-what">Chord changes only, one strum per bar</span></div>
+      <div class="rung"><span class="r-bpm">75</span><span class="r-what">Full pattern, eyes on the fretting hand</span></div>
+      <div class="rung"><span class="r-bpm">90</span><span class="r-what">Full pattern, eyes closed</span></div>
+      <div class="rung"><span class="r-bpm">100</span><span class="r-what">Add the verse walk-down</span></div>
+      <div class="rung"><span class="r-bpm">115</span><span class="r-what">Record tempo &mdash; play along</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Tone</h2></div>
+    <div class="two-col">
+      <div class="tile">
+        <h3>Chorus, generously</h3>
+        <p>The recorded guitar is drenched in it. That watery, slightly detuned wobble is doing half the work of the arrangement.</p>
+      </div>
+      <div class="tile">
+        <h3>Reverb, then more</h3>
+        <p>A big hall setting, clean amp, neck pickup. On acoustic, play softly with the flesh of your fingertips rather than nails.</p>
+      </div>
+      <div class="tile">
+        <h3>Let it ring</h3>
+        <p>Never damp between chords. The overlap of one voicing bleeding into the next is the entire character of the track.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="colophon">
+    <p><strong>About this sheet.</strong> Built from <a href="https://youtu.be/f12k8-cawXA" target="_blank" rel="noopener">Ivy by Frank Ocean Guitar Tutorial &mdash; Guitar Lessons with Stuart!</a> (Marin Music Center, 16:32). The section map and timestamps are the video's own chapter markers. The key, tempo and chord set were cross-checked against published chord transcriptions.</p>
+    <p>The lesson video itself couldn't be watched directly while this was assembled, so the fingerings drawn here are the standard voicings for those chords rather than a frame-by-frame copy of Stuart's hands. Where a shape looks different on screen, trust the video &mdash; and use the timestamps above to compare.</p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var CHORDS = [
+    { name:"C6",    nick:'the "weird C"',   frets:[-1,3,2,2,1,0], fingers:[0,4,2,3,1,0],
+      note:"An A minor shape with a C in the bass. The chord the whole song hangs on." },
+    { name:"Dm",    nick:"home base",        frets:[-1,-1,0,2,3,1], fingers:[0,0,0,2,3,1],
+      note:"The tonic. Let the open D string ring underneath everything." },
+    { name:"Am",    nick:"same shape as C6", frets:[-1,0,2,2,1,0], fingers:[0,0,2,3,1,0],
+      note:"Identical fingering to the C6 — lift the pinky and let the open A take over." },
+    { name:"Em/G",  nick:"verse, bass on G", frets:[3,2,2,0,0,0], fingers:[3,1,2,0,0,0],
+      note:"E minor with a G underneath. Three open strings on top keep the shimmer." },
+    { name:"Dm/F",  nick:"verse, bass on F", frets:[-1,-1,3,2,3,1], fingers:[0,0,3,2,4,1],
+      note:"D minor with F in the bass — no thumb-over-the-neck required." },
+    { name:"Em",    nick:"the dorian colour",frets:[0,2,2,0,0,0], fingers:[0,2,3,0,0,0],
+      note:"Appears in the later sections. Raised 6th of the key; that's the dorian sound." },
+    { name:"Bdim",  nick:"passing chord",    frets:[-1,2,3,4,3,-1], fingers:[0,1,2,4,3,0],
+      note:"A brief, unstable step between chords. Don't let it ring long." }
+  ];
+
+  var LOOP = [ {ch:"C6",fn:"x 3 2 2 1 0"}, {ch:"Dm",fn:"x x 0 2 3 1"},
+               {ch:"Am",fn:"x 0 2 2 1 0"}, {ch:"Dm",fn:"x x 0 2 3 1"} ];
+
+  var TIMELINE = [
+    { t:5,   what:"Play-through",                    kind:"key",  sub:"Hear the whole thing first" },
+    { t:63,  what:"Standard tuning, no capo" },
+    { t:66,  what:"Intro / chorus",                   kind:"key" },
+    { t:70,  what:'The "weird C" chord',              kind:"key" },
+    { t:105, what:"Basic picking pattern",            kind:"key" },
+    { t:155, what:'The "weird D minor" chord' },
+    { t:195, what:'The "weird A minor" chord' },
+    { t:433, what:"Second section — the verse",  kind:"key", sub:"Em/G and Dm/F" },
+    { t:665, what:"Stuart meltdown #1",               kind:"gag" },
+    { t:690, what:"Unnecessary review" },
+    { t:723, what:"Third section",                    kind:"key" },
+    { t:818, what:"Stuart meltdown #2",               kind:"gag" },
+    { t:885, what:"Bridge",                           kind:"key" },
+    { t:965, what:"Stuart meltdown #3",               kind:"gag" }
+  ];
+
+  var OPEN_MIDI = [40,45,50,55,59,64];
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  function el(tag, attrs){
+    var n = document.createElementNS(SVGNS, tag);
+    for(var k in attrs){ n.setAttribute(k, attrs[k]); }
+    return n;
+  }
+
+  /* ---------- chord diagram ---------- */
+  function diagram(ch){
+    var W = 132, H = 126, L = 22, T = 26, SW = 17.6, FH = 23;
+    var svg = el("svg", {viewBox:"0 0 "+W+" "+H, width:W, height:H, "aria-hidden":"true", "class":"dgm"});
+
+    var i;
+    for(i=0;i<6;i++){
+      svg.appendChild(el("line",{x1:L+i*SW, y1:T, x2:L+i*SW, y2:T+4*FH, "class":"d-line"}));
+    }
+    svg.appendChild(el("rect",{x:L, y:T-3, width:5*SW, height:3.5, "class":"d-nut"}));
+    for(i=1;i<=4;i++){
+      svg.appendChild(el("line",{x1:L, y1:T+i*FH, x2:L+5*SW, y2:T+i*FH, "class":"d-line"}));
+    }
+
+    for(i=0;i<6;i++){
+      var f = ch.frets[i], x = L+i*SW;
+      if(f === -1){
+        var g = el("g",{"class":"d-mute"});
+        g.appendChild(el("line",{x1:x-3.6,y1:T-16,x2:x+3.6,y2:T-9}));
+        g.appendChild(el("line",{x1:x-3.6,y1:T-9, x2:x+3.6,y2:T-16}));
+        svg.appendChild(g);
+      } else if(f === 0){
+        svg.appendChild(el("circle",{cx:x, cy:T-12.5, r:3.9, "class":"d-open"}));
+      } else {
+        var cy = T + (f-0.5)*FH;
+        svg.appendChild(el("circle",{cx:x, cy:cy, r:7.4, "class":"d-dot"}));
+        if(ch.fingers[i]){
+          var t = el("text",{x:x, y:cy+3.6, "text-anchor":"middle", "class":"d-num"});
+          t.textContent = ch.fingers[i];
+          svg.appendChild(t);
+        }
+      }
+    }
+    return svg;
+  }
+
+  /* ---------- audio ---------- */
+  var ac = null, wet = null;
+  function audio(){
+    if(ac) return ac;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    ac = new AC();
+
+    var out = ac.createGain(); out.gain.value = 0.9; out.connect(ac.destination);
+
+    var delay = ac.createDelay(1.0); delay.delayTime.value = 0.26;
+    var fb = ac.createGain(); fb.gain.value = 0.34;
+    var damp = ac.createBiquadFilter(); damp.type = "lowpass"; damp.frequency.value = 2200;
+    delay.connect(damp); damp.connect(fb); fb.connect(delay);
+    var dw = ac.createGain(); dw.gain.value = 0.4; delay.connect(dw); dw.connect(out);
+
+    var chorus = ac.createDelay(0.05); chorus.delayTime.value = 0.021;
+    var lfo = ac.createOscillator(); lfo.frequency.value = 0.55;
+    var lg = ac.createGain(); lg.gain.value = 0.0035;
+    lfo.connect(lg); lg.connect(chorus.delayTime); lfo.start();
+    var cw = ac.createGain(); cw.gain.value = 0.55; chorus.connect(cw); cw.connect(out);
+
+    wet = ac.createGain(); wet.gain.value = 1;
+    wet.connect(out); wet.connect(delay); wet.connect(chorus);
+    return ac;
+  }
+
+  function pluck(midi, when, vel){
+    var c = audio(); if(!c) return;
+    var f = 440 * Math.pow(2, (midi-69)/12);
+    var g = c.createGain();
+    var lp = c.createBiquadFilter(); lp.type="lowpass";
+    lp.frequency.setValueAtTime(3400, when);
+    lp.frequency.exponentialRampToValueAtTime(900, when+1.2);
+    var o1 = c.createOscillator(); o1.type="triangle"; o1.frequency.value=f;
+    var o2 = c.createOscillator(); o2.type="sine";     o2.frequency.value=f*2;
+    var g2 = c.createGain(); g2.gain.value=0.18; o2.connect(g2);
+    o1.connect(lp); g2.connect(lp); lp.connect(g); g.connect(wet);
+    var v = (vel||1) * 0.17;
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(v, when+0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, when+1.9);
+    o1.start(when); o2.start(when); o1.stop(when+2.0); o2.stop(when+2.0);
+  }
+
+  function notesOf(ch){
+    var n = [];
+    for(var i=0;i<6;i++){ n.push(ch.frets[i] === -1 ? null : OPEN_MIDI[i] + ch.frets[i]); }
+    return n;
+  }
+  function strum(ch){
+    var c = audio(); if(!c) return;
+    if(c.state === "suspended"){ c.resume(); }
+    var n = notesOf(ch), t = c.currentTime + 0.02, k = 0;
+    for(var i=0;i<6;i++){ if(n[i] !== null){ pluck(n[i], t + k*0.035, 1); k++; } }
+  }
+
+  /* ---------- render chords ---------- */
+  var bench = document.getElementById("bench");
+  CHORDS.forEach(function(ch){
+    var card = document.createElement("button");
+    card.type = "button"; card.className = "chordcard";
+    card.setAttribute("aria-label", "Play " + ch.name);
+
+    var name = document.createElement("span"); name.className="cc-name"; name.textContent=ch.name;
+    var nick = document.createElement("span"); nick.className="cc-nick"; nick.textContent=ch.nick||"";
+    card.appendChild(name); card.appendChild(nick);
+    card.appendChild(diagram(ch));
+
+    var fr = document.createElement("span"); fr.className="cc-frets";
+    fr.textContent = ch.frets.map(function(f){ return f===-1 ? "x" : f; }).join(" ");
+    card.appendChild(fr);
+
+    var nt = document.createElement("span"); nt.className="cc-note"; nt.textContent=ch.note;
+    card.appendChild(nt);
+
+    card.addEventListener("click", function(){
+      strum(ch);
+      card.classList.add("ringing");
+      setTimeout(function(){ card.classList.remove("ringing"); }, 900);
+    });
+    bench.appendChild(card);
+  });
+
+  /* ---------- loop bars ---------- */
+  var loopEl = document.getElementById("loop");
+  LOOP.forEach(function(b, i){
+    var d = document.createElement("div"); d.className="bar"; d.dataset.bar = i;
+    d.innerHTML = '<span class="b-num">BAR '+(i+1)+'</span>'+
+                  '<span class="b-ch"></span><span class="b-fn"></span>';
+    d.querySelector(".b-ch").textContent = b.ch;
+    d.querySelector(".b-fn").textContent = b.fn;
+    loopEl.appendChild(d);
+  });
+
+  /* ---------- picking machine ---------- */
+  var ROWS = [ {label:"1 · high E", s:5}, {label:"2 · B", s:4},
+               {label:"3 · G", s:3}, {label:"bass · thumb", s:-1} ];
+  var PATTERN = [-1, 3, 4, 5, 4, 3, 4, 5];
+  var COUNT = ["1","&","2","&","3","&","4","&"];
+
+  var pgrid = document.getElementById("pgrid");
+  var cells = [];
+  ROWS.forEach(function(row){
+    var lab = document.createElement("div"); lab.className="pg-label"; lab.textContent=row.label;
+    pgrid.appendChild(lab);
+    var rowCells = [];
+    for(var i=0;i<8;i++){
+      var c = document.createElement("div"); c.className="cell";
+      if(PATTERN[i] === row.s){ c.classList.add("on"); if(row.s === -1){ c.classList.add("thumb"); } }
+      pgrid.appendChild(c); rowCells.push(c);
+    }
+    cells.push(rowCells);
+  });
+  var pcount = document.getElementById("pcount");
+  var spacer = document.createElement("div"); pcount.appendChild(spacer);
+  COUNT.forEach(function(c){
+    var d = document.createElement("div"); d.className="count"; d.textContent=c; pcount.appendChild(d);
+  });
+
+  var bpmInput = document.getElementById("bpm");
+  var bpmOut = document.getElementById("bpmOut");
+  var playBtn = document.getElementById("play");
+  var timer = null, step = 0, bar = 0;
+
+  bpmInput.addEventListener("input", function(){ bpmOut.textContent = bpmInput.value + " bpm"; });
+
+  function bassString(ch){
+    for(var i=0;i<6;i++){ if(ch.frets[i] !== -1) return i; }
+    return 0;
+  }
+  function chordByName(n){
+    for(var i=0;i<CHORDS.length;i++){ if(CHORDS[i].name === n) return CHORDS[i]; }
+    return CHORDS[0];
+  }
+
+  function clearMarks(){
+    cells.forEach(function(r){ r.forEach(function(c){ c.classList.remove("step"); }); });
+    var bars = loopEl.querySelectorAll(".bar");
+    for(var i=0;i<bars.length;i++){ bars[i].classList.remove("active"); }
+  }
+
+  function tick(){
+    var ch = chordByName(LOOP[bar].ch);
+    var s = PATTERN[step];
+    var strIdx = (s === -1) ? bassString(ch) : s;
+    var f = ch.frets[strIdx];
+    var c = audio();
+    if(f !== -1 && c){ pluck(OPEN_MIDI[strIdx] + f, c.currentTime + 0.01, s === -1 ? 1.15 : 0.85); }
+
+    clearMarks();
+    for(var r=0;r<ROWS.length;r++){
+      if(ROWS[r].s === s){ cells[r][step].classList.add("step"); }
+    }
+    loopEl.querySelectorAll(".bar")[bar].classList.add("active");
+
+    step++;
+    if(step >= 8){ step = 0; bar = (bar + 1) % LOOP.length; }
+  }
+
+  function stop(){
+    if(timer){ clearInterval(timer); timer = null; }
+    playBtn.textContent = "Play the pattern";
+    clearMarks();
+  }
+
+  playBtn.addEventListener("click", function(){
+    if(timer){ stop(); return; }
+    var c = audio();
+    if(c && c.state === "suspended"){ c.resume(); }
+    step = 0; bar = 0;
+    playBtn.textContent = "Stop";
+    tick();
+    timer = setInterval(tick, (60000 / parseInt(bpmInput.value,10)) / 2);
+  });
+  bpmInput.addEventListener("change", function(){
+    if(timer){ clearInterval(timer); timer = setInterval(tick, (60000/parseInt(bpmInput.value,10))/2); }
+  });
+
+  /* ---------- timeline ---------- */
+  var tl = document.getElementById("timeline");
+  function mmss(t){
+    var m = Math.floor(t/60), s = t % 60;
+    return m + ":" + (s < 10 ? "0" + s : s);
+  }
+  TIMELINE.forEach(function(row){
+    var d = document.createElement("div");
+    d.className = "tl-row" + (row.kind ? " " + row.kind : "");
+    var a = document.createElement("a");
+    a.className = "tl-time"; a.href = "https://youtu.be/f12k8-cawXA?t=" + row.t;
+    a.target = "_blank"; a.rel = "noopener"; a.textContent = mmss(row.t);
+    var w = document.createElement("div"); w.className = "tl-what";
+    w.appendChild(document.createTextNode(row.what));
+    if(row.sub){
+      var sp = document.createElement("span"); sp.className="tl-sub"; sp.textContent=row.sub;
+      w.appendChild(sp);
+    }
+    d.appendChild(a); d.appendChild(w); tl.appendChild(d);
+  });
+})();
+</script>
