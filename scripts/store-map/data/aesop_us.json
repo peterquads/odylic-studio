@@ -1,0 +1,474 @@
+[
+{
+"n": "Aesop Nolita",
+"a": "232 Elizabeth Street",
+"c": "New York",
+"s": "NY",
+"lat": 40.72246,
+"lon": -73.99446
+},
+{
+"n": "Aesop Bleecker Street",
+"a": "341 Bleecker Street",
+"c": "New York",
+"s": "NY",
+"lat": 40.73427,
+"lon": -74.00437
+},
+{
+"n": "Aesop West Broadway",
+"a": "419 West Broadway",
+"c": "New York",
+"s": "NY",
+"lat": 40.7253,
+"lon": -74.0026
+},
+{
+"n": "Aesop Gansevoort Street",
+"a": "46 Gansevoort Street",
+"c": "New York",
+"s": "NY",
+"lat": 40.7393,
+"lon": -74.0068
+},
+{
+"n": "Aesop NoMad",
+"a": "1140 Broadway",
+"c": "New York",
+"s": "NY",
+"lat": 40.7447,
+"lon": -73.9886
+},
+{
+"n": "Aesop Rockefeller Center",
+"a": "45 Rockefeller Plaza",
+"c": "New York",
+"s": "NY",
+"lat": 40.7591,
+"lon": -73.9785
+},
+{
+"n": "Aesop Hudson Yards",
+"a": "20 Hudson Yards",
+"c": "New York",
+"s": "NY",
+"lat": 40.7539,
+"lon": -74.0019
+},
+{
+"n": "Aesop World Trade Center",
+"a": "Westfield WTC / The Oculus",
+"c": "New York",
+"s": "NY",
+"lat": 40.7118,
+"lon": -74.0109
+},
+{
+"n": "Aesop Madison Avenue",
+"a": "967 Madison Avenue",
+"c": "New York",
+"s": "NY",
+"lat": 40.7741,
+"lon": -73.9637
+},
+{
+"n": "Aesop Upper East Side",
+"a": "Lexington Avenue",
+"c": "New York",
+"s": "NY",
+"lat": 40.7748,
+"lon": -73.9607
+},
+{
+"n": "Aesop Upper West Side",
+"a": "Amsterdam Avenue",
+"c": "New York",
+"s": "NY",
+"lat": 40.781,
+"lon": -73.9796
+},
+{
+"n": "Aesop Bergen Street",
+"a": "Flatbush Avenue at Bergen",
+"c": "Brooklyn",
+"s": "NY",
+"lat": 40.6813,
+"lon": -73.9771
+},
+{
+"n": "Aesop Park Slope",
+"a": "Seventh Avenue",
+"c": "Brooklyn",
+"s": "NY",
+"lat": 40.6745,
+"lon": -73.9823
+},
+{
+"n": "Aesop Williamsburg",
+"a": "91 North 3rd Street",
+"c": "Brooklyn",
+"s": "NY",
+"lat": 40.718,
+"lon": -73.962
+},
+{
+"n": "Aesop Roosevelt Field",
+"a": "Roosevelt Field",
+"c": "Garden City",
+"s": "NY",
+"lat": 40.73797,
+"lon": -73.61231
+},
+{
+"n": "Aesop Century City",
+"a": "Westfield Century City",
+"c": "Los Angeles",
+"s": "CA",
+"lat": 34.05855,
+"lon": -118.41812
+},
+{
+"n": "Aesop Downtown LA",
+"a": "Spring Street",
+"c": "Los Angeles",
+"s": "CA",
+"lat": 34.0457,
+"lon": -118.2504
+},
+{
+"n": "Aesop Silver Lake",
+"a": "Sunset Boulevard",
+"c": "Los Angeles",
+"s": "CA",
+"lat": 34.0922,
+"lon": -118.2774
+},
+{
+"n": "Aesop Fairfax",
+"a": "North Fairfax Avenue",
+"c": "Los Angeles",
+"s": "CA",
+"lat": 34.0804,
+"lon": -118.3615
+},
+{
+"n": "Aesop Larchmont",
+"a": "North Larchmont Boulevard",
+"c": "Los Angeles",
+"s": "CA",
+"lat": 34.075,
+"lon": -118.3242
+},
+{
+"n": "Aesop Studio City",
+"a": "Ventura Boulevard",
+"c": "Los Angeles",
+"s": "CA",
+"lat": 34.1433,
+"lon": -118.3961
+},
+{
+"n": "Aesop Pacific Palisades",
+"a": "1052 Swarthmore Avenue",
+"c": "Los Angeles",
+"s": "CA",
+"lat": 34.0452,
+"lon": -118.5262
+},
+{
+"n": "Aesop Platform",
+"a": "8850 Washington Boulevard",
+"c": "Culver City",
+"s": "CA",
+"lat": 34.0265,
+"lon": -118.3894
+},
+{
+"n": "Aesop Abbot Kinney",
+"a": "Abbot Kinney Boulevard",
+"c": "Venice",
+"s": "CA",
+"lat": 33.9912,
+"lon": -118.4665
+},
+{
+"n": "Aesop Santa Monica Place",
+"a": "Santa Monica Place",
+"c": "Santa Monica",
+"s": "CA",
+"lat": 34.013,
+"lon": -118.4956
+},
+{
+"n": "Aesop Pasadena",
+"a": "Colorado Boulevard",
+"c": "Pasadena",
+"s": "CA",
+"lat": 34.1456,
+"lon": -118.1495
+},
+{
+"n": "Aesop Fillmore Street",
+"a": "Fillmore Street",
+"c": "San Francisco",
+"s": "CA",
+"lat": 37.7856,
+"lon": -122.4336
+},
+{
+"n": "Aesop Hayes Valley",
+"a": "550 Hayes Street",
+"c": "San Francisco",
+"s": "CA",
+"lat": 37.7765,
+"lon": -122.4262
+},
+{
+"n": "Aesop Berkeley",
+"a": "Fourth Street",
+"c": "Berkeley",
+"s": "CA",
+"lat": 37.8694,
+"lon": -122.3001
+},
+{
+"n": "Aesop Stanford",
+"a": "Stanford Shopping Center",
+"c": "Palo Alto",
+"s": "CA",
+"lat": 37.44177,
+"lon": -122.17249
+},
+{
+"n": "Aesop Fashion Valley",
+"a": "Fashion Valley",
+"c": "San Diego",
+"s": "CA",
+"lat": 32.76847,
+"lon": -117.16583
+},
+{
+"n": "Aesop UTC",
+"a": "Westfield UTC",
+"c": "San Diego",
+"s": "CA",
+"lat": 32.87187,
+"lon": -117.21267
+},
+{
+"n": "Aesop North Bridge",
+"a": "520 North Michigan Avenue",
+"c": "Chicago",
+"s": "IL",
+"lat": 41.8921,
+"lon": -87.6245
+},
+{
+"n": "Aesop Lincoln Park",
+"a": "West Armitage Avenue",
+"c": "Chicago",
+"s": "IL",
+"lat": 41.918,
+"lon": -87.6518
+},
+{
+"n": "Aesop Bucktown",
+"a": "1653 North Damen Avenue",
+"c": "Chicago",
+"s": "IL",
+"lat": 41.9123,
+"lon": -87.6772
+},
+{
+"n": "Aesop Newbury Street",
+"a": "Newbury Street",
+"c": "Boston",
+"s": "MA",
+"lat": 42.3515,
+"lon": -71.0766
+},
+{
+"n": "Aesop Seaport",
+"a": "Seaport Boulevard",
+"c": "Boston",
+"s": "MA",
+"lat": 42.3523,
+"lon": -71.0458
+},
+{
+"n": "Aesop Harvard Square",
+"a": "Harvard Square",
+"c": "Cambridge",
+"s": "MA",
+"lat": 42.3734,
+"lon": -71.1189
+},
+{
+"n": "Aesop Georgetown",
+"a": "3275 M Street NW",
+"c": "Washington",
+"s": "DC",
+"lat": 38.905,
+"lon": -77.0648
+},
+{
+"n": "Aesop Shaw",
+"a": "8th Street NW",
+"c": "Washington",
+"s": "DC",
+"lat": 38.9169,
+"lon": -77.0234
+},
+{
+"n": "Aesop NorthPark",
+"a": "NorthPark Center",
+"c": "Dallas",
+"s": "TX",
+"lat": 32.86937,
+"lon": -96.77428
+},
+{
+"n": "Aesop Knox",
+"a": "Knox Street",
+"c": "Dallas",
+"s": "TX",
+"lat": 32.8215,
+"lon": -96.7893
+},
+{
+"n": "Aesop Montrose",
+"a": "Westheimer Road",
+"c": "Houston",
+"s": "TX",
+"lat": 29.7428,
+"lon": -95.3932
+},
+{
+"n": "Aesop Heights Mercantile",
+"a": "Heights Mercantile",
+"c": "Houston",
+"s": "TX",
+"lat": 29.7714,
+"lon": -95.3988
+},
+{
+"n": "Aesop The Galleria",
+"a": "The Galleria",
+"c": "Houston",
+"s": "TX",
+"lat": 29.73906,
+"lon": -95.46441
+},
+{
+"n": "Aesop Aventura",
+"a": "Aventura Mall",
+"c": "Aventura",
+"s": "FL",
+"lat": 25.95825,
+"lon": -80.14171
+},
+{
+"n": "Aesop Design District",
+"a": "NE 41st Street",
+"c": "Miami",
+"s": "FL",
+"lat": 25.8133,
+"lon": -80.1932
+},
+{
+"n": "Aesop Brickell City Centre",
+"a": "701 South Miami Avenue",
+"c": "Miami",
+"s": "FL",
+"lat": 25.7664,
+"lon": -80.1934
+},
+{
+"n": "Aesop Wynwood",
+"a": "NW 2nd Avenue",
+"c": "Miami",
+"s": "FL",
+"lat": 25.8008,
+"lon": -80.1993
+},
+{
+"n": "Aesop Capitol Hill",
+"a": "11th Avenue",
+"c": "Seattle",
+"s": "WA",
+"lat": 47.6142,
+"lon": -122.3178
+},
+{
+"n": "Aesop Bellevue Square",
+"a": "Bellevue Square",
+"c": "Bellevue",
+"s": "WA",
+"lat": 47.61633,
+"lon": -122.2042
+},
+{
+"n": "Aesop NW 23rd Avenue",
+"a": "738 NW 23rd Avenue",
+"c": "Portland",
+"s": "OR",
+"lat": 45.531,
+"lon": -122.6979
+},
+{
+"n": "Aesop Cherry Creek",
+"a": "Cherry Creek Shopping Center",
+"c": "Denver",
+"s": "CO",
+"lat": 39.71744,
+"lon": -104.95492
+},
+{
+"n": "Aesop Short Hills",
+"a": "The Mall at Short Hills",
+"c": "Short Hills",
+"s": "NJ",
+"lat": 40.7401,
+"lon": -74.36499
+},
+{
+"n": "Aesop Greenwich Avenue",
+"a": "200 Greenwich Avenue",
+"c": "Greenwich",
+"s": "CT",
+"lat": 41.0262,
+"lon": -73.6263
+},
+{
+"n": "Aesop Walnut Street",
+"a": "1701 Walnut Street",
+"c": "Philadelphia",
+"s": "PA",
+"lat": 39.95,
+"lon": -75.169
+},
+{
+"n": "Aesop Tysons Corner",
+"a": "Tysons Corner Center",
+"c": "McLean",
+"s": "VA",
+"lat": 38.91673,
+"lon": -77.22321
+},
+{
+"n": "Aesop Edgehill",
+"a": "Edgehill Avenue",
+"c": "Nashville",
+"s": "TN",
+"lat": 36.1471,
+"lon": -86.7918
+},
+{
+"n": "Aesop Ala Moana",
+"a": "Ala Moana Center",
+"c": "Honolulu",
+"s": "HI",
+"lat": 21.29024,
+"lon": -157.84231
+}
+]

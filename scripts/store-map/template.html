@@ -1,0 +1,535 @@
+<title>Aesop &amp; Apple US Stores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#EFF1EE; --land:#DFE3DE; --land-hi:#D2D8D1; --border:#BCC3BA;
+  --ink:#1A1D19; --muted:#5F665D; --surface:#FFFFFF; --surface-2:#F5F7F4;
+  --hair:#DBE0D9;
+  --aesop:#B26F26; --aesop-soft:#EBDCC6;
+  --apple:#36678F; --apple-soft:#CFDDE8;
+  --focus:#36678F;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#14171A; --land:#232829; --land-hi:#2C3234; --border:#3A4143;
+    --ink:#E7EBE6; --muted:#98A099; --surface:#1B1F21; --surface-2:#22272A;
+    --hair:#2E3436;
+    --aesop:#DA9B4E; --aesop-soft:#4A3A22;
+    --apple:#7FB0DA; --apple-soft:#22343F;
+    --focus:#7FB0DA;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#14171A; --land:#232829; --land-hi:#2C3234; --border:#3A4143;
+  --ink:#E7EBE6; --muted:#98A099; --surface:#1B1F21; --surface-2:#22272A;
+  --hair:#2E3436;
+  --aesop:#DA9B4E; --aesop-soft:#4A3A22;
+  --apple:#7FB0DA; --apple-soft:#22343F;
+  --focus:#7FB0DA;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.45;
+  -webkit-text-size-adjust:100%; overscroll-behavior:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+
+.app{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* ---------- header ---------- */
+.top{
+  display:flex;align-items:center;gap:12px;
+  padding:max(10px,env(safe-area-inset-top)) 14px 10px;
+  border-bottom:1px solid var(--hair); background:var(--surface); z-index:5;
+}
+.mark{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em;line-height:1.1}
+.mark em{font-style:normal;color:var(--muted);font-weight:500}
+.top .spacer{flex:1}
+.iconbtn{
+  width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid var(--hair);color:var(--muted);flex:none;
+}
+.iconbtn:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- filter chips ---------- */
+.chips{display:flex;gap:8px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--hair);z-index:5}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 12px 7px 10px;border-radius:999px;
+  border:1px solid var(--hair);background:var(--surface-2);
+  color:var(--muted);font-size:13px;font-weight:500;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:currentColor;flex:none;opacity:.35}
+.chip .num{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;opacity:.75}
+.chip[aria-pressed="true"]{color:var(--ink);background:var(--surface)}
+.chip[aria-pressed="true"] .dot{opacity:1}
+.chip.aesop[aria-pressed="true"]{border-color:var(--aesop);background:var(--aesop-soft)}
+.chip.aesop[aria-pressed="true"] .dot{background:var(--aesop)}
+.chip.apple[aria-pressed="true"]{border-color:var(--apple);background:var(--apple-soft)}
+.chip.apple[aria-pressed="true"] .dot{background:var(--apple)}
+
+/* ---------- map ---------- */
+.mapwrap{position:relative;flex:1;min-height:0;background:var(--ground);overflow:hidden;touch-action:none}
+#map{display:block;width:100%;height:100%}
+.state{fill:var(--land);stroke:var(--border);stroke-width:.75px;vector-effect:non-scaling-stroke}
+#pins circle{stroke:var(--surface);stroke-width:1px;vector-effect:non-scaling-stroke;cursor:pointer}
+#pins circle.b0{fill:var(--apple)}
+#pins circle.b1{fill:var(--aesop)}
+#pins circle.off{display:none}
+#halo{fill:none;stroke:var(--ink);stroke-width:1.5px;vector-effect:non-scaling-stroke;opacity:0;pointer-events:none}
+#halo.on{opacity:.9}
+.zoomctl{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:1px;z-index:3}
+.zoomctl button{
+  width:38px;height:38px;background:var(--surface);border:1px solid var(--hair);
+  display:grid;place-items:center;color:var(--ink);font-size:17px;line-height:1;
+}
+.zoomctl button:first-child{border-radius:9px 9px 0 0}
+.zoomctl button:last-child{border-radius:0 0 9px 9px;font-size:12px;letter-spacing:.04em}
+.zoomctl button:active{background:var(--surface-2)}
+.hint{
+  position:absolute;left:12px;bottom:12px;
+  font-size:11px;color:var(--muted);background:var(--surface);
+  border:1px solid var(--hair);border-radius:7px;padding:5px 9px;
+  pointer-events:none;opacity:.9;
+}
+
+/* ---------- bottom sheet ---------- */
+.sheet{
+  background:var(--surface);border-top:1px solid var(--hair);
+  display:flex;flex-direction:column;flex:1;min-height:0;
+}
+.searchrow{display:flex;align-items:center;gap:9px;padding:11px 14px;flex:none}
+.searchrow svg{color:var(--muted);flex:none}
+#q{
+  flex:1;min-width:0;border:none;background:none;color:var(--ink);
+  font:inherit;font-size:15px;padding:5px 0;
+}
+#q::placeholder{color:var(--muted)}
+#q:focus{outline:none}
+#clear{color:var(--muted);font-size:13px;padding:4px 6px;display:none}
+#clear.on{display:block}
+.count{
+  padding:2px 14px 10px;font-size:11.5px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.07em;font-weight:500;flex:none;
+}
+.count b{font-family:var(--mono);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--hair)}
+
+.row{display:flex;gap:11px;align-items:baseline;width:100%;text-align:left;padding:11px 14px;border-bottom:1px solid var(--hair)}
+.row:hover{background:var(--surface-2)}
+.row .dot{width:8px;height:8px;border-radius:50%;flex:none;transform:translateY(-1px)}
+.row.b0 .dot{background:var(--apple)}
+.row.b1 .dot{background:var(--aesop)}
+.row .txt{min-width:0;flex:1}
+.row .nm{font-weight:500;font-size:14.5px}
+.row .lo{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{padding:26px 16px;color:var(--muted);font-size:14px;text-align:center}
+
+/* ---------- detail ---------- */
+.detail{padding:2px 16px 20px;display:none}
+.detail.on{display:block}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;padding:6px 0 12px}
+.detail .brand{
+  font-size:11px;text-transform:uppercase;letter-spacing:.09em;font-weight:600;
+}
+.detail .brand.b0{color:var(--apple)} .detail .brand.b1{color:var(--aesop)}
+.detail h2{font-family:var(--display);font-weight:600;font-size:23px;line-height:1.2;margin:5px 0 3px;letter-spacing:-.01em}
+.detail .addr{color:var(--muted);font-size:14px;margin-bottom:14px}
+.detail dl{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin:0 0 16px;font-size:13.5px}
+.detail dt{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+.detail dd{margin:0;font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.detail dd a{color:var(--ink)}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.act{
+  display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:9px;
+  border:1px solid var(--hair);background:var(--surface-2);font-size:13.5px;font-weight:500;
+  color:var(--ink);text-decoration:none;
+}
+.act:hover{background:var(--surface)}
+
+/* ---------- info dialog ---------- */
+dialog{
+  border:none;border-radius:14px;padding:0;max-width:min(520px,92vw);width:100%;
+  background:var(--surface);color:var(--ink);box-shadow:0 12px 48px rgba(0,0,0,.3);
+}
+dialog::backdrop{background:rgba(10,12,10,.45)}
+.dlg{padding:22px}
+.dlg h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0 0 12px;letter-spacing:-.01em}
+.dlg h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 6px;font-weight:600}
+.dlg p{margin:0 0 9px;font-size:13.5px;color:var(--ink);max-width:62ch}
+.dlg .note{color:var(--muted);font-size:12.5px}
+.dlg .close{margin-top:18px;padding:9px 16px;border:1px solid var(--hair);border-radius:9px;background:var(--surface-2);font-weight:500;font-size:14px}
+
+/* phone: map band on top, list beneath. .side dissolves so both are
+   siblings in one column and can be ordered independently of the DOM. */
+@media (max-width:819px){
+  .side{display:contents}
+  .top{order:1} .chips{order:2} .mapwrap{order:3} .sheet{order:4}
+  .mapwrap{flex:none;height:min(44vh,calc(62.5vw + 34px))}
+  .sheet{border-top:1px solid var(--hair)}
+}
+@media (min-width:820px){
+  .app{flex-direction:row}
+  .side{display:flex;flex-direction:column;width:372px;flex:none;border-right:1px solid var(--hair);background:var(--surface)}
+  .mapwrap{flex:1}
+  .sheet{border-top:none}
+}
+</style>
+
+<div class="app">
+  <div class="side">
+    <header class="top">
+      <div class="mark">Aesop <em>&amp;</em> Apple</div>
+      <div class="spacer"></div>
+      <button class="iconbtn" id="info" aria-label="About this map and its data sources">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="6.6"/><path d="M8 7.2v4M8 4.8v.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </header>
+
+    <div class="chips">
+      <button class="chip aesop" id="t1" aria-pressed="true">
+        <span class="dot"></span>Aesop<span class="num" id="n1">59</span>
+      </button>
+      <button class="chip apple" id="t0" aria-pressed="true">
+        <span class="dot"></span>Apple<span class="num" id="n0">272</span>
+      </button>
+    </div>
+
+    <section class="sheet" id="sheet" aria-label="Store list">
+      <div class="searchrow">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="7" cy="7" r="4.6"/><path d="M10.5 10.5 14 14" stroke-linecap="round"/>
+        </svg>
+        <input id="q" type="search" placeholder="Search store, city or state" autocomplete="off" aria-label="Search stores">
+        <button id="clear">Clear</button>
+      </div>
+
+      <div class="count" id="count"></div>
+      <div class="scroll" id="scroll">
+        <div id="list"></div>
+        <div class="detail" id="detail"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="mapwrap" id="mapwrap">
+    <svg id="map" role="img" aria-label="Map of Aesop and Apple store locations across the United States"></svg>
+    <div class="zoomctl">
+      <button id="zin" aria-label="Zoom in">+</button>
+      <button id="zout" aria-label="Zoom out">&minus;</button>
+      <button id="zreset" aria-label="Reset the map view">US</button>
+    </div>
+    <div class="hint" id="hint">Pinch or drag to explore</div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg">
+    <h2>About this map</h2>
+    <p><b id="dTot"></b> retail locations across the United States — every Apple Store, and Aesop's US signature stores.</p>
+
+    <h3>Apple &middot; <span id="dApple"></span> stores</h3>
+    <p>From the <b>All The Places</b> open dataset, which scrapes Apple's own store pages. Names, street addresses, phone numbers and coordinates are Apple's own, surveyed to the storefront.</p>
+    <p class="note">This is a 2022 snapshot — the most recent one reachable from this environment. Apple currently reports roughly 270 US stores, so a handful of openings, closures and relocations since 2022 will not be reflected.</p>
+
+    <h3>Aesop &middot; <span id="dAesop"></span> stores</h3>
+    <p>Compiled from Aesop's public store-locator pages. Aesop's own locator API is not reachable from this environment, so these were gathered store by store.</p>
+    <p class="note">Aesop's locator currently reports 78 US locations, so this layer is a substantial sample rather than the complete set — mostly missing smaller-market stores. Coordinates are street- or mall-level, accurate to about a block, not surveyed to the storefront.</p>
+
+    <h3>Projection</h3>
+    <p class="note">Albers equal-area conic, with Alaska and Hawaii inset at their conventional positions. Distances between insets and the mainland are not to scale.</p>
+
+    <button class="close" id="dlgx">Close</button>
+  </div>
+</dialog>
+
+<script>
+const DATA = __DATA__;
+const $ = s => document.querySelector(s);
+
+/* ---------------- map ---------------- */
+const svg = $('#map'), wrap = $('#mapwrap');
+const NS = 'http://www.w3.org/2000/svg';
+svg.setAttribute('viewBox', `0 0 ${DATA.W} ${DATA.H}`);
+svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+const world = document.createElementNS(NS, 'g');
+const land = document.createElementNS(NS, 'g');
+for (const s of DATA.shapes) {
+  const p = document.createElementNS(NS, 'path');
+  p.setAttribute('d', s.d); p.setAttribute('class', 'state');
+  land.appendChild(p);
+}
+const pins = document.createElementNS(NS, 'g'); pins.id = 'pins';
+const halo = document.createElementNS(NS, 'circle'); halo.id = 'halo';
+const nodes = DATA.pts.map((d, i) => {
+  const c = document.createElementNS(NS, 'circle');
+  c.setAttribute('cx', d.x); c.setAttribute('cy', d.y);
+  c.setAttribute('class', 'b' + d.b);
+  c.dataset.i = i;
+  pins.appendChild(c);
+  return c;
+});
+world.append(land, pins, halo);
+svg.appendChild(world);
+
+let k = 1, tx = 0, ty = 0;          // zoom + pan, in viewBox units
+let fit = 1;                         // screen px per viewBox unit at k=1
+const K_MIN = 1, K_MAX = 40;
+
+function measure() {
+  const r = wrap.getBoundingClientRect();
+  fit = Math.min(r.width / DATA.W, r.height / DATA.H) || 1;
+  return r;
+}
+function radius() {
+  // constant-ish on screen; eases up slightly when zoomed for tappability
+  const px = Math.max(3.1, Math.min(6.6, 3.1 * Math.pow(k, .32)));
+  return px / (fit * k);
+}
+let rafId = 0;
+function apply() {
+  if (rafId) return;
+  rafId = requestAnimationFrame(() => {
+    rafId = 0;
+    world.setAttribute('transform', `translate(${tx} ${ty}) scale(${k})`);
+    const r = radius();
+    for (const c of nodes) c.setAttribute('r', r);
+    if (sel != null) { halo.setAttribute('r', r * 2.4); }
+  });
+}
+function clampPan() {
+  // keep the map from being dragged entirely off screen
+  const vw = DATA.W, vh = DATA.H, m = 0.35;
+  tx = Math.min(vw * m, Math.max(vw * (1 - m) - vw * k, tx));
+  ty = Math.min(vh * m, Math.max(vh * (1 - m) - vh * k, ty));
+}
+function zoomAt(nk, cx, cy) {           // cx,cy in viewBox units
+  nk = Math.max(K_MIN, Math.min(K_MAX, nk));
+  tx = cx - (cx - tx) * (nk / k);
+  ty = cy - (cy - ty) * (nk / k);
+  k = nk; clampPan(); apply();
+}
+function toView(clientX, clientY) {      // client px -> viewBox units
+  const r = wrap.getBoundingClientRect();
+  const ox = (r.width - DATA.W * fit) / 2, oy = (r.height - DATA.H * fit) / 2;
+  return [(clientX - r.left - ox) / fit, (clientY - r.top - oy) / fit];
+}
+
+/* pointer: drag to pan, two fingers to pinch */
+const ptrs = new Map();
+let last = null, pinch0 = null, moved = 0, downT = 0, lastTap = 0;
+
+wrap.addEventListener('pointerdown', e => {
+  // let the overlaid controls keep their own clicks: capturing here would
+  // retarget the pointer to the map and the buttons would never fire
+  if (e.target.closest('.zoomctl')) return;
+  wrap.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (ptrs.size === 1) { last = [e.clientX, e.clientY]; moved = 0; downT = Date.now(); }
+  else if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    pinch0 = { d: Math.hypot(a[0]-b[0], a[1]-b[1]), k,
+               c: toView((a[0]+b[0])/2, (a[1]+b[1])/2) };
+  }
+  hideHint();
+});
+wrap.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (ptrs.size === 2 && pinch0) {
+    const [a, b] = [...ptrs.values()];
+    const d = Math.hypot(a[0]-b[0], a[1]-b[1]);
+    if (pinch0.d > 0) zoomAt(pinch0.k * (d / pinch0.d), pinch0.c[0], pinch0.c[1]);
+    moved = 99;
+  } else if (ptrs.size === 1 && last) {
+    const dx = e.clientX - last[0], dy = e.clientY - last[1];
+    moved += Math.abs(dx) + Math.abs(dy);
+    tx += dx / fit; ty += dy / fit;
+    last = [e.clientX, e.clientY]; clampPan(); apply();
+  }
+});
+function up(e) {
+  if (!ptrs.has(e.pointerId)) return;
+  const wasSingle = ptrs.size === 1;
+  ptrs.delete(e.pointerId);
+  if (ptrs.size < 2) pinch0 = null;
+  if (ptrs.size === 1) last = [...ptrs.values()][0];
+  if (ptrs.size === 0) {
+    last = null;
+    if (wasSingle && moved < 9 && Date.now() - downT < 500) {
+      const now = Date.now();
+      if (now - lastTap < 300) { const v = toView(e.clientX, e.clientY); zoomAt(k * 1.9, v[0], v[1]); lastTap = 0; }
+      else { lastTap = now; hit(e.clientX, e.clientY); }
+    }
+  }
+}
+wrap.addEventListener('pointerup', up);
+wrap.addEventListener('pointercancel', up);
+wrap.addEventListener('wheel', e => {
+  e.preventDefault(); hideHint();
+  const v = toView(e.clientX, e.clientY);
+  zoomAt(k * Math.pow(1.0016, -e.deltaY), v[0], v[1]);
+}, { passive: false });
+
+/* tap -> nearest visible pin within a finger's reach */
+function hit(cx, cy) {
+  const v = toView(cx, cy);
+  const px = (v[0] - tx) / k, py = (v[1] - ty) / k;
+  const reach = 15 / (fit * k);
+  let best = -1, bd = reach * reach;
+  for (let i = 0; i < DATA.pts.length; i++) {
+    if (!shown[i]) continue;
+    const d = DATA.pts[i], dx = d.x - px, dy = d.y - py, q = dx*dx + dy*dy;
+    if (q < bd) { bd = q; best = i; }
+  }
+  select(best >= 0 ? best : null);
+}
+
+/* ---------------- filtering ---------------- */
+const on = [true, true];               // [apple, aesop]
+let query = '', shown = new Array(DATA.pts.length).fill(true), visible = [];
+const norm = s => s.toLowerCase();
+const STATES = {AL:'alabama',AK:'alaska',AZ:'arizona',AR:'arkansas',CA:'california',CO:'colorado',CT:'connecticut',DE:'delaware',DC:'washington dc district of columbia',FL:'florida',GA:'georgia',HI:'hawaii',ID:'idaho',IL:'illinois',IN:'indiana',IA:'iowa',KS:'kansas',KY:'kentucky',LA:'louisiana',ME:'maine',MD:'maryland',MA:'massachusetts',MI:'michigan',MN:'minnesota',MS:'mississippi',MO:'missouri',MT:'montana',NE:'nebraska',NV:'nevada',NH:'new hampshire',NJ:'new jersey',NM:'new mexico',NY:'new york',NC:'north carolina',ND:'north dakota',OH:'ohio',OK:'oklahoma',OR:'oregon',PA:'pennsylvania',RI:'rhode island',SC:'south carolina',SD:'south dakota',TN:'tennessee',TX:'texas',UT:'utah',VT:'vermont',VA:'virginia',WA:'washington',WV:'west virginia',WI:'wisconsin',WY:'wyoming'};
+const hay = DATA.pts.map(d => norm([d.n, d.c, d.s, STATES[d.s] || d.s, d.a].join(' ')));
+
+function refresh(refit) {
+  visible = [];
+  for (let i = 0; i < DATA.pts.length; i++) {
+    const d = DATA.pts[i];
+    const ok = on[d.b] && (!query || hay[i].includes(query));
+    shown[i] = ok;
+    nodes[i].classList.toggle('off', !ok);
+    if (ok) visible.push(i);
+  }
+  const tot = DATA.pts.filter(d => on[d.b]).length;
+  $('#count').innerHTML = query
+    ? `<b>${visible.length}</b> of <b>${tot}</b> matching &ldquo;${esc(query)}&rdquo;`
+    : `<b>${visible.length}</b> locations`;
+  renderList();
+  if (sel != null && !shown[sel]) select(null);
+  if (refit && query && visible.length) fitTo(visible);
+}
+function fitTo(idx) {
+  const xs = idx.map(i => DATA.pts[i].x), ys = idx.map(i => DATA.pts[i].y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const pad = 60;
+  const nk = Math.max(K_MIN, Math.min(14, Math.min(
+    DATA.W / Math.max(x1 - x0 + pad, 1), DATA.H / Math.max(y1 - y0 + pad, 1))));
+  k = nk;
+  tx = DATA.W / 2 - ((x0 + x1) / 2) * k;
+  ty = DATA.H / 2 - ((y0 + y1) / 2) * k;
+  clampPan(); apply();
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------------- list ---------------- */
+const listEl = $('#list'), detailEl = $('#detail');
+function renderList() {
+  if (!visible.length) { listEl.innerHTML = '<div class="empty">No stores match that search.</div>'; return; }
+  const order = visible.slice().sort((a, b) => {
+    const A = DATA.pts[a], B = DATA.pts[b];
+    return A.s.localeCompare(B.s) || A.c.localeCompare(B.c) || A.n.localeCompare(B.n);
+  });
+  listEl.innerHTML = order.map(i => {
+    const d = DATA.pts[i];
+    return `<button class="row b${d.b}" data-i="${i}"><span class="dot"></span><span class="txt">`
+      + `<span class="nm">${esc(d.n)}</span><br><span class="lo">${esc(d.c)}, ${esc(d.s)}</span>`
+      + `</span></button>`;
+  }).join('');
+}
+listEl.addEventListener('click', e => {
+  const b = e.target.closest('.row'); if (!b) return;
+  const i = +b.dataset.i;
+  select(i);
+  const d = DATA.pts[i];
+  k = Math.max(k, 6); tx = DATA.W/2 - d.x*k; ty = DATA.H/2 - d.y*k; clampPan(); apply(); keepVisible(d);
+});
+
+/* ---------------- detail ---------------- */
+let sel = null;
+function select(i) {
+  sel = i;
+  if (i == null) {
+    halo.classList.remove('on'); detailEl.classList.remove('on');
+    listEl.style.display = ''; return;
+  }
+  const d = DATA.pts[i];
+  halo.setAttribute('cx', d.x); halo.setAttribute('cy', d.y);
+  halo.setAttribute('r', radius() * 2.4); halo.classList.add('on');
+  const q = encodeURIComponent(`${d.n}, ${d.c}, ${d.s}`);
+  detailEl.innerHTML =
+    `<button class="back" id="back">&larr; All locations</button>`
+    + `<div class="brand b${d.b}">${d.b ? 'Aesop' : 'Apple'}</div>`
+    + `<h2>${esc(d.n)}</h2>`
+    + `<div class="addr">${d.a ? esc(d.a) + '<br>' : ''}${esc(d.c)}, ${esc(d.s)}${d.z ? ' ' + esc(d.z) : ''}</div>`
+    + `<dl>`
+    + (d.p ? `<dt>Phone</dt><dd><a href="tel:${esc(d.p.replace(/[^\d+]/g,''))}">${esc(d.p)}</a></dd>` : '')
+    + `<dt>Coords</dt><dd>${d.lat.toFixed(4)}, ${d.lon.toFixed(4)}</dd></dl>`
+    + `<div class="acts">`
+    + `<a class="act" target="_blank" rel="noopener" href="https://maps.apple.com/?q=${q}&ll=${d.lat},${d.lon}">Apple Maps</a>`
+    + `<a class="act" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${d.lat}%2C${d.lon}">Google Maps</a>`
+    + `</div>`;
+  detailEl.classList.add('on'); listEl.style.display = 'none';
+  $('#back').onclick = () => select(null);
+  $('#scroll').scrollTop = 0;
+  keepVisible(d);
+}
+
+// nudge a selected point away from the edges of the map band
+function keepVisible(d) {
+  const r = wrap.getBoundingClientRect();
+  const ox = (r.width - DATA.W * fit) / 2, oy = (r.height - DATA.H * fit) / 2;
+  const sx = ox + (tx + d.x * k) * fit, sy = oy + (ty + k * d.y) * fit;
+  const bottom = r.height;
+  const m = Math.min(40, r.height / 5);
+  let dx = 0, dy = 0;
+  if (sx < m) dx = m - sx; else if (sx > r.width - m) dx = r.width - m - sx;
+  if (sy < m) dy = m - sy; else if (sy > bottom - m) dy = bottom - m - sy;
+  if (dx || dy) { tx += dx / fit; ty += dy / fit; clampPan(); apply(); }
+}
+
+/* ---------------- controls ---------------- */
+$('#t0').onclick = e => { on[0] = !on[0]; e.currentTarget.setAttribute('aria-pressed', on[0]); refresh(); };
+$('#t1').onclick = e => { on[1] = !on[1]; e.currentTarget.setAttribute('aria-pressed', on[1]); refresh(); };
+$('#zin').onclick = () => zoomAt(k * 1.6, DATA.W / 2, DATA.H / 2);
+$('#zout').onclick = () => zoomAt(k / 1.6, DATA.W / 2, DATA.H / 2);
+$('#zreset').onclick = () => { k = 1; tx = 0; ty = 0; apply(); };
+
+let tq;
+$('#q').addEventListener('input', e => {
+  query = norm(e.target.value.trim());
+  $('#clear').classList.toggle('on', !!query);
+  clearTimeout(tq); tq = setTimeout(() => refresh(true), 180);
+});
+$('#clear').onclick = () => { $('#q').value = ''; query = ''; $('#clear').classList.remove('on'); refresh(); };
+
+const dlg = $('#dlg');
+$('#info').onclick = () => dlg.showModal();
+$('#dlgx').onclick = () => dlg.close();
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+function hideHint() { const h = $('#hint'); if (h) h.remove(); }
+setTimeout(hideHint, 4200);
+
+/* ---------------- boot ---------------- */
+const nApple = DATA.pts.filter(d => d.b === 0).length;
+const nAesop = DATA.pts.filter(d => d.b === 1).length;
+$('#n0').textContent = nApple; $('#n1').textContent = nAesop;
+$('#dApple').textContent = nApple; $('#dAesop').textContent = nAesop;
+$('#dTot').textContent = DATA.pts.length;
+
+new ResizeObserver(() => { measure(); apply(); }).observe(wrap);
+measure(); refresh(); apply();
+</script>
